@@ -2,7 +2,7 @@
 	import './layout.css';
 	import favicon from '#lib/assets/favicon.svg';
 	import logo from '#lib/assets/logo.svg';
-	import Icon, { type IconName } from '#lib/components/Icon.svelte';
+	import Icon, { type IconGlyph } from '#lib/components/Icon.svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 
@@ -10,11 +10,11 @@
 
 	const tabs = (
 		[
-			{ label: 'Accueil', icon: 'accueil', routeId: '/' },
-			{ label: 'Historique', icon: 'historique', routeId: '/historique' },
-			{ label: 'Rapports', icon: 'rapports', routeId: '/rapports' },
-			{ label: 'Réglages', icon: 'reglages', routeId: '/reglages' }
-		] as const satisfies { label: string; icon: IconName; routeId: string }[]
+			{ label: 'Accueil', glyph: 'home', routeId: '/' },
+			{ label: 'Historique', glyph: 'clock', routeId: '/historique' },
+			{ label: 'Rapports', glyph: 'chart-bar', routeId: '/rapports' },
+			{ label: 'Réglages', glyph: 'cog', routeId: '/reglages' }
+		] as const satisfies { label: string; glyph: IconGlyph; routeId: string }[]
 	).map((tab) => ({ ...tab, href: resolve(tab.routeId) }));
 	// resolve() gives relative hrefs, so match on the route instead.
 	const currentTab = $derived(tabs.find((tab) => tab.routeId === page.route.id));
@@ -39,7 +39,7 @@
 				class={['btn justify-start', tab === currentTab ? 'btn-primary' : 'btn-ghost']}
 				aria-current={tab === currentTab ? 'page' : undefined}
 			>
-				<Icon name={tab.icon} />{tab.label}
+				<Icon glyph={tab.glyph} />{tab.label}
 			</a>
 		{/each}
 	</nav>
@@ -69,7 +69,7 @@
 				class={{ 'dock-active text-primary': tab === currentTab }}
 				aria-current={tab === currentTab ? 'page' : undefined}
 			>
-				<Icon name={tab.icon} class="size-6" /><span class="dock-label">{tab.label}</span>
+				<Icon glyph={tab.glyph} class="size-6" /><span class="dock-label">{tab.label}</span>
 			</a>
 		{/each}
 	</nav>

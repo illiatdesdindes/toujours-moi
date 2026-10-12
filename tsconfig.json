@@ -2,7 +2,7 @@
 	"extends": "$app/tsconfig",
 	"compilerOptions": {
 		"rewriteRelativeImportExtensions": true,
-		// Off so test/env.d.ts types the adapter output, not its JSDoc (@cloudflare/workers-types).
+		// Off so test/sveltekit-worker.d.ts types the adapter output, not its JSDoc (@cloudflare/workers-types).
 		"allowJs": false,
 		"checkJs": false,
 		"sourceMap": true,
