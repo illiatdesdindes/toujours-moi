@@ -18,11 +18,15 @@
 	).map((tab) => ({ ...tab, href: resolve(tab.routeId) }));
 	// resolve() gives relative hrefs, so match on the route instead.
 	const currentTab = $derived(tabs.find((tab) => tab.routeId === page.route.id));
+	// Off-tab routes are only the error page for now.
+	const pageTitle = $derived(
+		currentTab?.label ?? (page.status === 404 ? 'Page introuvable' : 'Erreur')
+	);
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>{currentTab ? `${currentTab.label} · TJM` : 'TJM'}</title>
+	<title>{pageTitle} · TJM</title>
 </svelte:head>
 
 <div class="flex min-h-dvh bg-base-100 text-base-content">
@@ -51,7 +55,7 @@
 			<span class="flex items-center gap-2 text-lg font-black md:hidden">
 				<img src={logo} alt="" class="size-7" />TJM
 			</span>
-			<h1 class="sr-only text-lg font-bold md:not-sr-only">{currentTab?.label}</h1>
+			<h1 class="sr-only text-lg font-bold md:not-sr-only">{pageTitle}</h1>
 		</header>
 
 		<!-- Room for the dock on mobile. -->

@@ -25,6 +25,14 @@ describe('worker', () => {
 		expect(html).toContain('crossorigin="use-credentials"');
 	});
 
+	it('answers an unknown URL with a French 404 page', async () => {
+		const res = await fetchPage('/nope');
+		expect(res.status).toBe(404);
+		const html = await res.text();
+		expect(html).toContain('<title>Page introuvable · TJM</title>');
+		expect(html).toContain("Cette page n'existe pas.");
+	});
+
 	it('has a migrated local D1 database', async () => {
 		const { results } = await env.DB.prepare(
 			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'd1_migrations'"

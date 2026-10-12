@@ -32,6 +32,9 @@
 - `npm install` warns that `esbuild` and `workerd` install scripts aren't approved (npm 11 `allowScripts`); build and workerd tests run fine without them, so nothing was approved.
 
 - **No `pop-edge` utility yet** (review): deleted because nothing uses it. The first card or tile adds it back, copied from the prototype's `.pop-edge`.
+- **French error page** (QA): `src/routes/+error.svelte` shows "Cette page n'existe pas." and a "Retour à l'accueil" button. The layout's `pageTitle` falls back to "Page introuvable" (404) or "Erreur" (anything else) for routes that aren't tabs, so the desktop `h1` and the tab title are never empty. Integration test covers `/nope` → 404 + French title.
+- **One focus ring** (QA): `:focus-visible` gets a 2px base-content outline with a 2px offset in `@layer base` of `layout.css`. Matches the sidebar's daisyUI ring; daisyUI components still win with their own focus styles.
+- **Muted text at `opacity-70`, not the prototype's `opacity-60`** (QA): 60% gave about 4.1:1 on base-100, under WCAG AA's 4.5:1; 70% gives about 5.6:1. A contrast fix, not a design change, so the prototype isn't edited.
 
 ## Deviations from spec
 
