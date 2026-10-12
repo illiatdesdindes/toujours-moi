@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TJM — monogramme</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.43/daisyui.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.8"></script>
+<script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+	[v-cloak] { display: none; }
+	body { background: #e9e6e1; font-family: 'Space Grotesk', system-ui, sans-serif; color: #1d2440; }
+	.card-pop { background: #fdfbf6; border: 2px solid #1d2440; box-shadow: 3px 3px 0 #1d2440; border-radius: 0.75rem; }
+	svg text { font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="app" v-cloak class="mx-auto max-w-6xl p-4 md:p-8">
+	<h1 class="text-2xl font-bold">TJM · prototype 04 : variations du monogramme T🧹M</h1>
+	<p class="mb-6 text-sm opacity-70">G1, G2, G-mini = le combo demandé ; A à F pour mémoire. Chacune en grand, aux tailles réelles (96 / 48 / 24 px), recadrée en cercle comme l'icône « maskable » d'Android (le cercle pointillé = zone sûre), sur un écran d'accueil, et en en-tête de l'app.</p>
+
+	<div class="grid gap-6 md:grid-cols-2">
+		<section v-for="logo in logos" :key="logo.key" class="card-pop space-y-4 p-4">
+			<h2 class="text-lg font-bold">{{ logo.number }}. {{ logo.label }}</h2>
+			<div class="flex flex-wrap items-end gap-4">
+				<div class="relative size-48">
+					<svg viewBox="0 0 512 512" class="size-48" v-html="logo.svg"></svg>
+					<svg v-if="showSafeZone" viewBox="0 0 512 512" class="pointer-events-none absolute inset-0 size-48"><circle cx="256" cy="256" r="205" fill="none" stroke="#000" stroke-width="3" stroke-dasharray="10 8" opacity=".5"/></svg>
+				</div>
+				<svg viewBox="0 0 512 512" class="size-24" v-html="logo.svg"></svg>
+				<svg viewBox="0 0 512 512" class="size-12" v-html="logo.svg"></svg>
+				<svg viewBox="0 0 512 512" class="size-6" v-html="logo.svg"></svg>
+				<div class="size-24 overflow-hidden rounded-full"><svg viewBox="51 51 410 410" class="size-24" v-html="maskableSvg(logo)"></svg></div>
+			</div>
+
+			<div class="flex flex-wrap gap-4">
+				<!-- android home screen -->
+				<div class="grid w-56 grid-cols-4 gap-3 rounded-2xl bg-gradient-to-b from-[#3a4a6b] to-[#1b2236] p-4 text-center text-[0.6rem] text-white">
+					<div v-for="index in 7" :key="index"><div class="mx-auto size-10 rounded-full bg-white/25"></div><span class="opacity-70">App</span></div>
+					<div><div class="mx-auto size-10 overflow-hidden rounded-full"><svg viewBox="51 51 410 410" class="size-10" v-html="maskableSvg(logo)"></svg></div><span>TJM</span></div>
+				</div>
+				<!-- app header -->
+				<div class="flex-1 space-y-2">
+					<div class="flex items-center gap-2 rounded-lg border-2 border-[#1d2440] bg-[#4565d0] px-3 py-2 text-white">
+						<svg viewBox="0 0 512 512" class="size-7" v-html="logo.svg"></svg><b class="text-lg">TJM</b>
+					</div>
+					<div class="flex items-center gap-2 rounded-lg border-2 border-[#1d2440] bg-[#1d2440] px-3 py-2 text-[#fdfbf6]">
+						<svg viewBox="0 0 512 512" class="size-7" v-html="logo.svg"></svg><b class="text-lg">TJM</b><span class="text-xs opacity-70">toujours moi</span>
+					</div>
+					<div class="flex items-center gap-2 rounded border border-gray-300 bg-white px-2 py-1 text-xs">
+						<svg viewBox="0 0 512 512" class="size-4" v-html="logo.svg"></svg> TJM — onglet du navigateur
+					</div>
+				</div>
+			</div>
+			<div v-if="logo.key === 'broom_only' || logo.key === 'combo_mini'" class="flex items-center gap-3 rounded-lg bg-[#202124] p-3 text-xs text-white">
+				<svg viewBox="0 0 512 512" class="size-6" v-html="badgeSvg"></svg>
+				<span><b>TJM</b> · Léa · Vaisselle — 45 min · aujourd'hui, 14:15</span>
+			</div>
+			<p class="text-sm opacity-70">{{ logo.note }}</p>
+		</section>
+	</div>
+	<label class="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" class="toggle toggle-sm" v-model="showSafeZone" /> Afficher la zone sûre maskable</label>
+</div>
+
+<script>
+const NAVY = '#1d2440', CREAM = '#fdfbf6', YELLOW = '#ffd23f', CORAL = '#ff6b6b', GREEN = '#3ccf91', BLUE = '#4d96ff';
+const roundedBackground = (fill) => `<rect width="512" height="512" rx="112" fill="${fill}"/>`;
+
+const letterT = (fill, dx = 0, dy = 0) => `<g fill="${fill}" transform="translate(${dx} ${dy})"><rect x="88" y="150" width="124" height="42"/><rect x="129" y="150" width="42" height="210"/></g>`;
+const letterM = (stroke, dx = 0, dy = 0) => `<path transform="translate(${dx} ${dy})" d="M338 360 V160 L382 252 L426 160 V360" fill="none" stroke="${stroke}" stroke-width="40" stroke-linejoin="round" stroke-linecap="round"/>`;
+// Original: straight bristles, the whole broom tilted.
+const tiltedBroom = (handle, bristles, outline, lines = NAVY, dx = 0, dy = 0) => `<g transform="translate(${dx} ${dy}) rotate(18 262 250)">
+	<line x1="262" y1="112" x2="262" y2="300" stroke="${handle}" stroke-width="22" stroke-linecap="round"/>
+	<path d="M226 296 H298 L318 392 H206 Z" fill="${bristles}" stroke="${outline}" stroke-width="10" stroke-linejoin="round"/>
+	<g stroke="${lines}" stroke-width="6" stroke-linecap="round"><line x1="236" y1="320" x2="230" y2="384"/><line x1="262" y1="320" x2="262" y2="384"/><line x1="288" y1="320" x2="294" y2="384"/></g></g>`;
+// Upright handle, bristles sweeping left: the broom draws the J's hook.
+const hookBroom = (handle, bristles, outline, lines = NAVY, dx = 0, dy = 0) => `<g transform="translate(${dx} ${dy})">
+	<line x1="266" y1="120" x2="266" y2="296" stroke="${handle}" stroke-width="24" stroke-linecap="round"/>
+	<path d="M238 290 H298 L296 330 Q270 396 184 394 L206 330 Z" fill="${bristles}" stroke="${outline}" stroke-width="10" stroke-linejoin="round"/>
+	<g stroke="${lines}" stroke-width="6" stroke-linecap="round" fill="none"><path d="M258 318 Q248 360 214 380"/><path d="M280 318 Q272 366 240 386"/></g></g>`;
+const sparkle = (x, y, size, fill, stroke = 'none') => `<path transform="translate(${x} ${y}) scale(${size})" d="M0 -22 L6 -6 L22 0 L6 6 L0 22 L-6 6 L-22 0 L-6 -6 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>`;
+
+const logos = [
+	{
+		key: 'combo_yellow', number: 'G1', label: 'D + balai de A + étincelles de E (balai jaune)', background: CORAL,
+		note: 'Fond corail et ombre dure de D, balai penché de A (tout jaune pour ressortir sur le corail), étincelles de E avec leur ombre.',
+		art: letterT(NAVY, 12, 12) + tiltedBroom(NAVY, NAVY, NAVY, NAVY, 12, 12) + letterM(NAVY, 12, 12) + sparkle(162, 410, 1.1, NAVY) + sparkle(122, 368, 0.6, NAVY)
+			+ letterT(CREAM) + tiltedBroom(YELLOW, YELLOW, NAVY) + letterM(CREAM) + sparkle(150, 398, 1.1, YELLOW, NAVY) + sparkle(116, 362, 0.6, CREAM, NAVY)
+	},
+	{
+		key: 'combo_cream', number: 'G2', label: 'Pareil, manche crème + poils jaunes', background: CORAL,
+		note: 'Le manche reprend la couleur des lettres : le balai se lit plus comme une lettre, les poils jaunes restent l\'accent.',
+		art: letterT(NAVY, 12, 12) + tiltedBroom(NAVY, NAVY, NAVY, NAVY, 12, 12) + letterM(NAVY, 12, 12) + sparkle(162, 410, 1.1, NAVY) + sparkle(122, 368, 0.6, NAVY)
+			+ letterT(CREAM) + tiltedBroom(CREAM, YELLOW, NAVY) + letterM(CREAM) + sparkle(150, 398, 1.1, YELLOW, NAVY) + sparkle(116, 362, 0.6, CREAM, NAVY)
+	},
+	{
+		key: 'combo_mini', number: 'G-mini', label: 'Favicon / badge assortis (balai penché seul)', background: CORAL,
+		note: 'La version ≤ 24 px et le badge monochrome, avec le balai de A.',
+		art: `<g transform="translate(256 256) scale(1.4) translate(-262 -256)">${tiltedBroom(NAVY, NAVY, NAVY, NAVY, 10, 10)}${tiltedBroom(YELLOW, YELLOW, NAVY)}</g>`
+	},
+	{
+		key: 'original', number: 'A', label: 'Original (balai penché)', background: NAVY,
+		note: 'La version que tu as choisie, telle quelle, pour comparer.',
+		art: letterT(CREAM) + tiltedBroom(YELLOW, CORAL, CREAM) + letterM(CREAM)
+	},
+	{
+		key: 'hook', number: 'B', label: 'Balai droit, les poils font le crochet du J', background: NAVY,
+		note: 'Le manche est droit et les poils partent à gauche : on lit vraiment un J. Base des variantes C à E.',
+		art: letterT(CREAM) + hookBroom(YELLOW, CORAL, CREAM) + letterM(CREAM)
+	},
+	{
+		key: 'inverted', number: 'C', label: 'Inversé : fond jaune, lettres navy', background: YELLOW,
+		note: 'Très « Pop », ressort bien sur un écran d\'accueil sombre ; moins sobre que le navy.',
+		art: letterT(NAVY) + hookBroom(NAVY, CORAL, NAVY, NAVY) + letterM(NAVY)
+	},
+	{
+		key: 'hard_shadow', number: 'D', label: 'Ombre portée dure (comme les cartes Pop)', background: CORAL,
+		note: 'Reprend exactement le langage du thème (bordure + ombre décalée). À 24 px l\'ombre épaissit les lettres, ce qui aide.',
+		art: letterT(NAVY, 12, 12) + hookBroom(NAVY, NAVY, NAVY, NAVY, 12, 12) + letterM(NAVY, 12, 12)
+			+ letterT(CREAM) + hookBroom(YELLOW, YELLOW, NAVY) + letterM(CREAM)
+	},
+	{
+		key: 'sparkles', number: 'E', label: 'Navy + étincelles du « propre »', background: NAVY,
+		note: 'B avec deux étincelles là où le balai vient de passer : un clin d\'œil « c\'est fait ». Elles disparaissent en dessous de 48 px, sans gêner.',
+		art: letterT(CREAM) + hookBroom(YELLOW, CORAL, CREAM) + letterM(CREAM) + sparkle(150, 400, 1.1, YELLOW) + sparkle(112, 360, 0.6, CREAM)
+	},
+	{
+		key: 'broom_only', number: 'F', label: 'Le balai seul : favicon et badge de notification', background: NAVY,
+		note: 'Pas un logo à part : la version mini de B pour les 16–24 px (onglet) et, en silhouette blanche, le badge monochrome des notifications Android.',
+		art: `<g transform="translate(256 256) scale(1.45) translate(-246 -256)">${hookBroom(YELLOW, CORAL, CREAM)}</g>`
+	}
+].map((logo) => ({ ...logo, svg: roundedBackground(logo.background) + logo.art }));
+
+Vue.createApp({
+	setup() {
+		// Maskable icons are full-bleed (Android crops them itself), art shrunk into the safe circle.
+		const maskableSvg = (logo) => `<rect width="512" height="512" fill="${logo.background}"/><g transform="translate(256 256) scale(0.82) translate(-256 -256)">${logo.art}</g>`;
+		// Android notification badge: white silhouette, transparency only.
+		const badgeSvg = `<g transform="translate(256 256) scale(1.4) translate(-262 -256)">${tiltedBroom('#fff', '#fff', '#fff', 'transparent')}</g>`;
+		return { logos, maskableSvg, badgeSvg, showSafeZone: Vue.ref(true) };
+	}
+}).mount('#app');
+</script>
+</body>
+</html>
