@@ -30,7 +30,7 @@ export const canManageMembers = (viewer: PersonRef) => viewer.role === 'admin';
 export const canManageChoreTypes = (viewer: PersonRef) => viewer.role === 'admin';
 
 /** Spec Q8: the Famille profile, for parents and admin. */
-export const canViewFamille = (viewer: PersonRef) => isGrownUp(viewer);
+export const canViewFamilyProfile = (viewer: PersonRef) => isGrownUp(viewer);
 
 /** Spec Q10: a role change or deactivation must leave at least one active admin. */
 export const keepsAnActiveAdmin = ({
@@ -38,11 +38,14 @@ export const keepsAnActiveAdmin = ({
 	activeAdminCount,
 	change
 }: {
-	member: PersonRef;
+	member: PersonRef & { isActive: boolean };
 	activeAdminCount: number;
 	change: 'deactivate' | { role: UserRole };
 }) => {
+	// A deactivated admin isn't counted, so changing them can't lose an active admin.
 	const losesAdmin =
-		member.role === 'admin' && (change === 'deactivate' || change.role !== 'admin');
+		member.isActive &&
+		member.role === 'admin' &&
+		(change === 'deactivate' || change.role !== 'admin');
 	return !losesAdmin || activeAdminCount > 1;
 };

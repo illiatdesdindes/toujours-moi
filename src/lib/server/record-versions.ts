@@ -24,7 +24,12 @@ const VERSIONED_COLUMNS = {
 export type VersionedTable = keyof typeof VERSIONED_COLUMNS;
 type ColumnValue = string | number | null;
 /** Set by saveWithVersion() itself, never by a caller. */
-const BOOKKEEPING_COLUMNS = ['id', 'update_count', 'created_at', 'updated_at'];
+const BOOKKEEPING_COLUMNS = ['id', 'update_count', 'created_at', 'updated_at'] as const;
+/** The columns a caller may set on `tableName`: a typo fails the type check. */
+type WritableColumn<TableName extends VersionedTable> = Exclude<
+	(typeof VERSIONED_COLUMNS)[TableName][number],
+	(typeof BOOKKEEPING_COLUMNS)[number]
+>;
 
 /**
  * Writes `changes` to the row `recordId` of `tableName` and its version, in one D1 batch: a new
@@ -33,23 +38,29 @@ const BOOKKEEPING_COLUMNS = ['id', 'update_count', 'created_at', 'updated_at'];
  * row after the change, read back in SQL. Returns null when nothing was written: a create that lost
  * to a UNIQUE constraint (same id or same email).
  */
-export const saveWithVersion = async (
+export const saveWithVersion = async <TableName extends VersionedTable>(
 	db: D1Database,
-	tableName: VersionedTable,
+	tableName: TableName,
 	recordId: string,
-	changes: Record<string, ColumnValue>,
+	changes: Partial<Record<WritableColumn<TableName>, ColumnValue>>,
 	changedByUserId: string
 ): Promise<{ changeKind: ChangeKind; versionNumber: number } | null> => {
 	const columns: readonly string[] = VERSIONED_COLUMNS[tableName];
+	const bookkeepingColumns: readonly string[] = BOOKKEEPING_COLUMNS;
 	const changedColumns = Object.keys(changes);
+	// Also checked at runtime: the column names go into SQL, and a cast can get past the type.
 	const refused = changedColumns.filter(
-		(column) => !columns.includes(column) || BOOKKEEPING_COLUMNS.includes(column)
+		(column) => !columns.includes(column) || bookkeepingColumns.includes(column)
 	);
 	if (refused.length) throw new Error(`saveWithVersion(${tableName}): can't set ${refused}`);
 
 	const changedAt = new Date().toISOString();
 	const exists = await db.prepare(`SELECT 1 FROM ${tableName} WHERE id = ?`).bind(recordId).first();
-	const changeKind: ChangeKind = !exists ? 'created' : changes.deleted_at ? 'deleted' : 'updated';
+	const changeKind: ChangeKind = !exists
+		? 'created'
+		: 'deleted_at' in changes && changes.deleted_at
+			? 'deleted'
+			: 'updated';
 	const values = Object.values(changes);
 	const write = exists
 		? db

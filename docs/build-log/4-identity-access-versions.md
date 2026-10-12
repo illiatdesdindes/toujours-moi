@@ -15,7 +15,6 @@
 
 ## Decisions
 
-- **`db` is the first parameter of `saveWithVersion`**: the spec's signature leaves it out, but the module has no global binding to read, and passing it keeps the function testable against the test D1.
 - **Create vs update is decided by whether `recordId` exists** (one read before the batch): missing → `INSERT … ON CONFLICT DO NOTHING`, version 0 `created`; present → `UPDATE` with `update_count + 1`, `deleted` when `changes.deleted_at` is set, else `updated`. Options were an explicit kind parameter or this; this keeps the spec's signature. #5 must check an existing chore id (same author) itself before calling it for the idempotent retry, since a second call with the same id is an update.
 - **Snapshot built in SQL** (`INSERT INTO record_versions … SELECT …, json_object(<every column>) FROM <table> WHERE id = ?`), in the same batch, so it is the real row after the change (defaults included) and the version number is the row's own `update_count`. This needs each table's column list: `VERSIONED_COLUMNS` in `record-versions.ts`, which is also the whitelist for the table and column names put into SQL. #5/#9 add `chores` and `chore_types` there.
 - **A create that loses to a UNIQUE constraint writes nothing and returns null** (version insert `ON CONFLICT DO NOTHING` on creates only). Updates keep a plain insert, so a missing increment fails loudly.
@@ -28,8 +27,22 @@
 - **Access bindings**: `ACCESS_TEAM_DOMAIN` is the same team as notakid; `ACCESS_AUD` is a placeholder outside production, and production mode throws ("#12") like the D1 id, since the Access app doesn't exist yet.
 - **`last-admin` rule** is in the policy now (`keepsAnActiveAdmin`), unit-tested; #9 wires it to the Membres actions.
 - **Seed via `sqlite3`** on the local D1 file, as in notakid: `cf d1 query --local` answers "no local equivalent". The seed also writes each user's version 0, as `saveWithVersion` would. Re-runnable.
-- **Integration helpers** in `test/access-jwt.ts` (sign as Access, stub the certs endpoint, fetch the built Worker). The JWT signer fixture is copied from notakid (`src/lib/server/access-jwt.fixtures.ts`). The rate-limit test uses its own email because the limiter's counts outlive tests. The old "has a migrated local D1" check is dropped: every test now uses the migrated tables.
+- **Integration helpers** in `test/worker-requests.ts` (sign as Access, stub the certs endpoint, fetch the built Worker) and `test/test-family.ts` (ids, Papa the admin, `resetUsers()`, `seedAdmin()`). The JWT signer fixture is copied from notakid (`src/lib/server/access-jwt.fixtures.ts`). The rate-limit test uses its own email because the limiter's counts outlive tests. The old "has a migrated local D1" check is dropped: every test now uses the migrated tables.
+
+## Decisions from the code review
+
+- **Rate-limit namespace `1002`**, not notakid's `1001`: same Cloudflare account, and a shared namespace would share one counter per email between the two apps.
+- **429 copy in tu** ("Trop de requêtes, réessaie dans une minute"), the prototype's voice.
+- **Test setup split in two modules** rather than one: `test/worker-requests.ts` (renamed from `access-jwt.ts`, it also fetches pages) imports the built Worker; `test/test-family.ts` holds the shared ids and seed, so `record-versions.test.ts` uses it without loading the Worker.
+- **`saveWithVersion` types `changes` per table**: generic over the table, keys limited to its `VERSIONED_COLUMNS` minus the bookkeeping ones, so a typo fails `npm run check`. The runtime whitelist stays: the names go into SQL and a cast gets past the type.
+- **`resolveViewerEmail(..., { useDevViewerEmail })`** instead of `{ dev }`: says that the JWT is skipped and `DEV_VIEWER_EMAIL` decides.
+- **`GLOSSARY.md` created** with this ticket's terms (User, Role, Admin/active admin, Bootstrap admin, Viewer, PersonRef, Access policy, Family profile, Versioned table, Version, Change kind). `canViewFamille` renamed `canViewFamilyProfile` (English code; "Famille" stays the UI word). No ADR: nothing here is hard to reverse yet.
+- **`keepsAnActiveAdmin` takes `member.isActive`**: changing a deactivated admin never loses an active admin, as in the prototype's `isLastActiveAdmin`. #9 passes `deleted_at IS NULL`.
 
 ## Deviations from spec
 
+- **`saveWithVersion(db, tableName, recordId, changes, changedByUserId)`**: `db` is an extra first parameter the spec's signature (Q7, #4) leaves out. The module has no global binding to read, and passing it keeps the function testable against the test D1.
+
 ## Skipped review/QA findings
+
+- None. The 429 register finding came twice (same fix).

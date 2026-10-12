@@ -1,24 +1,12 @@
-import { env } from 'cloudflare:workers';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { saveWithVersion } from '../src/lib/server/record-versions';
-import { accessHeaders, fetchPage, stubAccessCerts } from './access-jwt';
-
-const ADMIN_ID = '01900000-0000-7000-8000-000000000001';
+import { resetUsers, seedAdmin } from './test-family';
+import { accessHeaders, fetchPage, stubAccessCerts } from './worker-requests';
 
 describe('worker', () => {
 	let headers: Record<string, string>;
 	beforeAll(async () => {
-		await env.DB.batch([
-			env.DB.prepare('DELETE FROM record_versions'),
-			env.DB.prepare('DELETE FROM users')
-		]);
-		await saveWithVersion(
-			env.DB,
-			'users',
-			ADMIN_ID,
-			{ email: 'papa@exemple.fr', name: 'Papa', role: 'admin', colour_key: 'cornflower' },
-			ADMIN_ID
-		);
+		await resetUsers();
+		await seedAdmin();
 		headers = await accessHeaders('papa@exemple.fr');
 	});
 	beforeEach(stubAccessCerts);

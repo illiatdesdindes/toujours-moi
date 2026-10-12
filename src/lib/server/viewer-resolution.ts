@@ -8,16 +8,16 @@ type ViewerEnv = { ACCESS_TEAM_DOMAIN: string; ACCESS_AUD: string; DEV_VIEWER_EM
 
 /**
  * The verified, lowercased email behind a request, from its signed `Cf-Access-Jwt-Assertion`;
- * null if it doesn't verify. `dev`: local dev has no Access in front, so `DEV_VIEWER_EMAIL` is the
- * Viewer (any seeded user, to try the 3 roles).
+ * null if it doesn't verify. `useDevViewerEmail`: local dev has no Access in front, so the JWT is
+ * skipped and `DEV_VIEWER_EMAIL` is the Viewer (any seeded user, to try the 3 roles).
  */
 export const resolveViewerEmail = async (
 	request: Request,
 	env: ViewerEnv,
-	{ dev = false } = {}
+	{ useDevViewerEmail = false } = {}
 ): Promise<string | null> => {
 	const jwt = request.headers.get('Cf-Access-Jwt-Assertion');
-	const email = dev
+	const email = useDevViewerEmail
 		? env.DEV_VIEWER_EMAIL
 		: jwt && (await verifyAccessJwt(jwt, env).catch(() => null));
 	return email ? email.toLowerCase() : null;

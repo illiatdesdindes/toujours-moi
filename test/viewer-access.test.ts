@@ -1,19 +1,11 @@
 import { env } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { saveWithVersion } from '../src/lib/server/record-versions';
-import { accessHeaders, fetchPage, stubAccessCerts } from './access-jwt';
-
-const ADMIN_ID = '01900000-0000-7000-8000-000000000001';
-const CHILD_ID = '01900000-0000-7000-8000-000000000003';
+import { ADMIN_ID, CHILD_ID, resetUsers, seedAdmin } from './test-family';
+import { accessHeaders, fetchPage, stubAccessCerts } from './worker-requests';
 
 const seedFamily = async () => {
-	await saveWithVersion(
-		env.DB,
-		'users',
-		ADMIN_ID,
-		{ email: 'papa@exemple.fr', name: 'Papa', role: 'admin', colour_key: 'cornflower' },
-		ADMIN_ID
-	);
+	await seedAdmin();
 	await saveWithVersion(
 		env.DB,
 		'users',
@@ -33,10 +25,7 @@ const expectAccessDenied = async (res: Response) => {
 describe('viewer access', () => {
 	beforeEach(async () => {
 		stubAccessCerts();
-		await env.DB.batch([
-			env.DB.prepare('DELETE FROM record_versions'),
-			env.DB.prepare('DELETE FROM users')
-		]);
+		await resetUsers();
 	});
 	afterEach(() => vi.unstubAllGlobals());
 

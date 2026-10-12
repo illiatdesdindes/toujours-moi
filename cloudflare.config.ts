@@ -34,8 +34,9 @@ export default defineConfig(({ mode }) => {
 						: bindings.d1({ name: 'tjm-local', id: '00000000-0000-4000-8000-000000000000' }),
 				ASSETS: bindings.assets(),
 				// Per Viewer, per Cloudflare location, approximate: stops a looping client, not a precise quota.
+				// Namespace 1002: notakid (same account) has 1001, and a shared namespace would share the counter.
 				VIEWER_RATE_LIMIT: bindings.rateLimit({
-					namespace: '1001',
+					namespace: '1002',
 					simple: { limit: 60, period: 60 }
 				})
 			}

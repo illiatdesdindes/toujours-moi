@@ -56,7 +56,9 @@ describe('resolveViewerEmail', () => {
 
 	it('takes DEV_VIEWER_EMAIL in local dev, with no JWT', async () => {
 		const devEnv = { ...VIEWER_ENV, DEV_VIEWER_EMAIL: 'Lea@exemple.fr' };
-		expect(await resolveViewerEmail(request(), devEnv, { dev: true })).toBe('lea@exemple.fr');
+		expect(await resolveViewerEmail(request(), devEnv, { useDevViewerEmail: true })).toBe(
+			'lea@exemple.fr'
+		);
 		// Outside dev the variable is ignored, even if someone sets it.
 		expect(await resolveViewerEmail(request(), devEnv)).toBeNull();
 	});

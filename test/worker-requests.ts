@@ -1,4 +1,4 @@
-// Signed Access requests against the built Worker (integration tests).
+// Requests to the built Worker, signed as Cloudflare Access would (integration tests).
 import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { vi } from 'vitest';

@@ -1,10 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { saveWithVersion } from '../src/lib/server/record-versions';
-
-const ADMIN_ID = '01900000-0000-7000-8000-000000000001';
-const CHILD_ID = '01900000-0000-7000-8000-000000000003';
-const admin = { email: 'papa@exemple.fr', name: 'Papa', role: 'admin', colour_key: 'cornflower' };
+import { ADMIN_ID, CHILD_ID, papaAdmin as admin, resetUsers } from './test-family';
 
 const versionsOf = async (recordId: string) =>
 	(
@@ -28,12 +25,7 @@ const rowOf = (recordId: string) =>
 	env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(recordId).first();
 
 describe('saveWithVersion', () => {
-	beforeEach(async () => {
-		await env.DB.batch([
-			env.DB.prepare('DELETE FROM record_versions'),
-			env.DB.prepare('DELETE FROM users')
-		]);
-	});
+	beforeEach(resetUsers);
 
 	it('creates a row with version 0 holding the full row', async () => {
 		expect(await saveWithVersion(env.DB, 'users', ADMIN_ID, admin, ADMIN_ID)).toEqual({
@@ -107,9 +99,11 @@ describe('saveWithVersion', () => {
 
 	it('refuses unknown and bookkeeping columns', async () => {
 		await expect(
+			// @ts-expect-error: not a users column
 			saveWithVersion(env.DB, 'users', ADMIN_ID, { ...admin, password: 'x' }, ADMIN_ID)
 		).rejects.toThrow("can't set password");
 		await expect(
+			// @ts-expect-error: a bookkeeping column
 			saveWithVersion(env.DB, 'users', ADMIN_ID, { ...admin, update_count: 9 }, ADMIN_ID)
 		).rejects.toThrow("can't set update_count");
 	});
