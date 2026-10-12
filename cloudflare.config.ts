@@ -24,12 +24,20 @@ export default defineConfig(({ mode }) => {
 			// Bill guards: a runaway loop dies here instead of eating the plan (defaults: 30 s CPU, 10,000 subrequests).
 			limits: { cpuMs: 5_000, subrequests: 500 },
 			env: {
+				// Cloudflare Access (spec Q1). Not secrets: AUD is the Access app's "Application Audience (AUD) Tag".
+				ACCESS_TEAM_DOMAIN: bindings.text('https://illiatdesdindes.cloudflareaccess.com'),
+				ACCESS_AUD: bindings.text(mode === 'production' ? productionAccessAud() : 'local-aud'),
 				// development/test: a local-only database, so `npm run db:migrate:local` never names production.
 				DB:
 					mode === 'production'
 						? bindings.d1({ name: 'tjm-production', id: productionDatabaseId() })
 						: bindings.d1({ name: 'tjm-local', id: '00000000-0000-4000-8000-000000000000' }),
-				ASSETS: bindings.assets()
+				ASSETS: bindings.assets(),
+				// Per Viewer, per Cloudflare location, approximate: stops a looping client, not a precise quota.
+				VIEWER_RATE_LIMIT: bindings.rateLimit({
+					namespace: '1001',
+					simple: { limit: 60, period: 60 }
+				})
 			}
 		}
 	};
@@ -38,4 +46,9 @@ export default defineConfig(({ mode }) => {
 // ponytail: the production database doesn't exist yet; #12 creates it and pastes its ID here.
 function productionDatabaseId(): string {
 	throw new Error('cloudflare.config.ts: no production D1 database yet (#12)');
+}
+
+// ponytail: the Access application doesn't exist yet; #12 creates it and pastes its AUD tag here.
+function productionAccessAud(): string {
+	throw new Error('cloudflare.config.ts: no production Access application yet (#12)');
 }

@@ -1,0 +1,59 @@
+<!doctype html>
+<!-- Errors thrown before the app renders (src/hooks.server.ts: "Accès refusé", too many requests).
+     Static, so the Pop theme is inlined here. -->
+<html lang="fr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#ff6b6b" />
+		<title>%sveltekit.error.message% · TJM</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap"
+		/>
+		<style>
+			body {
+				margin: 0;
+				min-height: 100dvh;
+				display: grid;
+				place-items: center;
+				padding: 1rem;
+				box-sizing: border-box;
+				background: #fdfbf6;
+				color: #1d2440;
+				font-family: 'Space Grotesk', system-ui, sans-serif;
+				text-align: center;
+			}
+			main {
+				max-width: 24rem;
+				padding: 2rem 1.5rem;
+				border: 2px solid #1d2440;
+				border-radius: 0.75rem;
+				box-shadow: 3px 3px 0 #1d2440;
+				background: #f3efe4;
+			}
+			img {
+				width: 4rem;
+				height: 4rem;
+				border-radius: 0.875rem;
+			}
+			h1 {
+				margin: 1rem 0 0.5rem;
+				font-size: 1.5rem;
+			}
+			p {
+				margin: 0;
+				opacity: 0.7;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<img src="/icon-192.png" alt="" />
+			<h1>%sveltekit.error.message%</h1>
+			<p>Si ça ne devrait pas arriver, demande à l'admin de la famille.</p>
+		</main>
+	</body>
+</html>

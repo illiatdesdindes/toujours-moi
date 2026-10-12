@@ -1,1 +1,5 @@
 # Copy to .dev.vars (gitignored) for local dev. Production secrets: `npx cf workers secrets update <NAME> --worker tjm --type secret_text --text <value>` (#12).
+
+# The seeded user you are in `npm run dev` (no Access locally): papa@ (admin), maman@ (parent),
+# lea@ or noe@ (children), all @exemple.fr. Restart the dev server after changing it.
+DEV_VIEWER_EMAIL=papa@exemple.fr

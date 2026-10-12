@@ -6,7 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 
-	let { children } = $props();
+	let { data, children } = $props();
 
 	const tabs = (
 		[
@@ -56,6 +56,8 @@
 				<img src={logo} alt="" class="size-7" />TJM
 			</span>
 			<h1 class="sr-only text-lg font-bold md:not-sr-only">{pageTitle}</h1>
+			<!-- #6 puts the profile switcher here for parents and admin. -->
+			<span class="font-semibold">{data.viewer.name}</span>
 		</header>
 
 		<!-- Room for the dock on mobile. -->
