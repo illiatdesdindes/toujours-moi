@@ -14,3 +14,9 @@ export function uuidV7(createdAtMs: number = Date.now()): string {
 	const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
+
+const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+/** The format check for an id a browser made (spec Q20 point 1). */
+export const isUuidV7 = (candidate: unknown): candidate is string =>
+	typeof candidate === 'string' && UUID_V7.test(candidate);

@@ -21,3 +21,9 @@ export type Viewer = { id: string; role: UserRole; name: string; colourKey: Colo
 
 /** Just what the access policy needs to know about a person. */
 export type PersonRef = { id: string; role: UserRole };
+
+/** A chore type as the picker shows it (spec Q2): icon + short label, full label for `title`. */
+export type ChoreTypeOption = { id: string; shortLabel: string; fullLabel: string; icon: string };
+
+/** A chore's note is one line (spec Q3), this long at most. */
+export const MAX_CHORE_NOTE_LENGTH = 200;

@@ -32,3 +32,16 @@ export const fetchPage = async (path: string, headers: HeadersInit = {}) => {
 	await waitOnExecutionContext(ctx);
 	return res;
 };
+
+/** A JSON POST to the built Worker, as the page's own fetch would send it. */
+export const postJson = async (path: string, body: unknown, headers: HeadersInit = {}) => {
+	const ctx = createExecutionContext();
+	const request = new Request(`http://example.com${path}`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', Origin: 'http://example.com', ...headers },
+		body: JSON.stringify(body)
+	});
+	const res = await worker.fetch(request, env, ctx);
+	await waitOnExecutionContext(ctx);
+	return res;
+};

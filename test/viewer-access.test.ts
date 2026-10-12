@@ -1,19 +1,8 @@
 import { env } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { saveWithVersion } from '../src/lib/server/record-versions';
-import { ADMIN_ID, CHILD_ID, resetUsers, seedAdmin } from './test-family';
+import { ADMIN_ID, CHILD_ID, resetFamily, seedFamily } from './test-family';
 import { accessHeaders, fetchPage, stubAccessCerts } from './worker-requests';
-
-const seedFamily = async () => {
-	await seedAdmin();
-	await saveWithVersion(
-		env.DB,
-		'users',
-		CHILD_ID,
-		{ email: 'lea@exemple.fr', name: 'Léa', role: 'child', colour_key: 'turquoise' },
-		ADMIN_ID
-	);
-};
 
 const expectAccessDenied = async (res: Response) => {
 	expect(res.status).toBe(403);
@@ -25,7 +14,7 @@ const expectAccessDenied = async (res: Response) => {
 describe('viewer access', () => {
 	beforeEach(async () => {
 		stubAccessCerts();
-		await resetUsers();
+		await resetFamily();
 	});
 	afterEach(() => vi.unstubAllGlobals());
 

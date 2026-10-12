@@ -5,8 +5,43 @@
 	import Icon, { type IconGlyph } from '#lib/components/Icon.svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { setChoreOutbox, setShowToast } from '#lib/app-context.js';
+	import { createChoreOutbox, localStorageOrMemory, sendChoreToServer } from '#lib/chore-outbox.js';
+	import { onMount } from 'svelte';
 
 	let { data, children } = $props();
+
+	let toastMessage = $state<string | null>(null);
+	let toastTimer: ReturnType<typeof setTimeout> | undefined;
+	const showToast = (message: string) => {
+		clearTimeout(toastTimer);
+		toastMessage = message;
+		toastTimer = setTimeout(() => (toastMessage = null), 2500);
+	};
+	setShowToast(showToast);
+
+	// The viewer can't change without a reload (Access session), so one outbox for the app's life.
+	// svelte-ignore state_referenced_locally
+	const choreOutbox = setChoreOutbox(
+		createChoreOutbox({
+			storage: localStorageOrMemory(),
+			viewerId: data.viewer.id,
+			send: (chore) => sendChoreToServer(chore),
+			onRejected: (_chore, message) => showToast(`Tâche non enregistrée : ${message}`)
+		})
+	);
+	// Spec Q20 point 1: retried on `online` and on the app reopening (a reload, or back from the background).
+	onMount(() => {
+		void choreOutbox.retry();
+		const retryWhenVisible = () => document.visibilityState === 'visible' && choreOutbox.retry();
+		const retry = () => void choreOutbox.retry();
+		addEventListener('online', retry);
+		document.addEventListener('visibilitychange', retryWhenVisible);
+		return () => {
+			removeEventListener('online', retry);
+			document.removeEventListener('visibilitychange', retryWhenVisible);
+		};
+	});
 
 	const tabs = (
 		[
@@ -66,6 +101,17 @@
 				{@render children()}
 			</div>
 		</main>
+	</div>
+
+	<!-- Always in the page, so screen readers hear each new message. -->
+	<div role="status">
+		{#if toastMessage}
+			<p
+				class="fixed inset-x-3 bottom-20 z-30 rounded-box bg-neutral p-3 text-sm text-neutral-content pop-edge md:right-6 md:bottom-6 md:left-auto md:w-96"
+			>
+				{toastMessage}
+			</p>
+		{/if}
 	</div>
 
 	<nav class="dock border-t-2 border-base-content bg-base-200 md:hidden">

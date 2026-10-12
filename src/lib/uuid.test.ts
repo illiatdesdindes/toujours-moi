@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { uuidV7 } from './uuid';
-
-const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+import { isUuidV7, uuidV7 } from './uuid';
 
 describe('uuidV7', () => {
 	it('is a lowercase RFC 9562 version 7 UUID', () => {
-		expect(uuidV7()).toMatch(UUID_V7);
+		expect(isUuidV7(uuidV7())).toBe(true);
 	});
 
 	it('starts with the millisecond timestamp, so ids sort by creation time', () => {
@@ -19,5 +17,16 @@ describe('uuidV7', () => {
 		const createdAt = Date.now();
 		const ids = new Set(Array.from({ length: 1000 }, () => uuidV7(createdAt)));
 		expect(ids.size).toBe(1000);
+	});
+});
+
+describe('isUuidV7', () => {
+	it('accepts only lowercase version 7 UUIDs', () => {
+		expect(isUuidV7('0199e1c2-3b4a-7c5d-8e6f-0123456789ab')).toBe(true);
+		expect(isUuidV7('0199E1C2-3B4A-7C5D-8E6F-0123456789AB')).toBe(false);
+		expect(isUuidV7(crypto.randomUUID())).toBe(false); // v4
+		expect(isUuidV7('0199e1c2-3b4a-7c5d-0e6f-0123456789ab')).toBe(false); // variant
+		expect(isUuidV7("1' OR 1=1")).toBe(false);
+		expect(isUuidV7(42)).toBe(false);
 	});
 });

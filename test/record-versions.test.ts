@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { saveWithVersion } from '../src/lib/server/record-versions';
-import { ADMIN_ID, CHILD_ID, papaAdmin as admin, resetUsers } from './test-family';
+import { ADMIN_ID, CHILD_ID, papaAdmin as admin, resetFamily } from './test-family';
 
 const versionsOf = async (recordId: string) =>
 	(
@@ -25,7 +25,7 @@ const rowOf = (recordId: string) =>
 	env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(recordId).first();
 
 describe('saveWithVersion', () => {
-	beforeEach(resetUsers);
+	beforeEach(resetFamily);
 
 	it('creates a row with version 0 holding the full row', async () => {
 		expect(await saveWithVersion(env.DB, 'users', ADMIN_ID, admin, ADMIN_ID)).toEqual({

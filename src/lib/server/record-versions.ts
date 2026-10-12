@@ -3,7 +3,7 @@ import { uuidV7 } from '../uuid';
 
 /**
  * Each versioned table's columns, in snapshot order. Also the whitelist for the table and column
- * names saveWithVersion() puts into SQL. #5/#9 add `chores` and `chore_types`.
+ * names saveWithVersion() puts into SQL.
  */
 const VERSIONED_COLUMNS = {
 	users: [
@@ -13,6 +13,34 @@ const VERSIONED_COLUMNS = {
 		'role',
 		'colour_key',
 		'last_duration_minutes',
+		'update_count',
+		'created_at',
+		'updated_at',
+		'deleted_at',
+		'deleted_by_user_id'
+	],
+	chore_types: [
+		'id',
+		'type_key',
+		'short_label',
+		'full_label',
+		'icon',
+		'sort_order',
+		'archived_at',
+		'update_count',
+		'created_at',
+		'updated_at',
+		'deleted_at',
+		'deleted_by_user_id'
+	],
+	chores: [
+		'id',
+		'chore_type_id',
+		'duration_minutes',
+		'started_at',
+		'performer_user_id',
+		'author_user_id',
+		'note',
 		'update_count',
 		'created_at',
 		'updated_at',

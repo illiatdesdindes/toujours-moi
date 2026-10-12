@@ -1,11 +1,11 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetUsers, seedAdmin } from './test-family';
+import { resetFamily, seedAdmin } from './test-family';
 import { accessHeaders, fetchPage, stubAccessCerts } from './worker-requests';
 
 describe('worker', () => {
 	let headers: Record<string, string>;
 	beforeAll(async () => {
-		await resetUsers();
+		await resetFamily();
 		await seedAdmin();
 		headers = await accessHeaders('papa@exemple.fr');
 	});

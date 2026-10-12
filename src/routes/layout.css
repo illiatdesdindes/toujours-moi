@@ -43,6 +43,12 @@
 	--font-sans: 'Space Grotesk', 'Noto Color Emoji', system-ui, sans-serif;
 }
 
+/* Pop cards and tiles (prototype 02's .pop-edge). */
+@utility pop-edge {
+	border: 2px solid var(--color-base-content);
+	box-shadow: 3px 3px 0 var(--color-base-content);
+}
+
 /* Pop buttons are part of the theme, so they live with it. Unlayered, like the prototype, to win over daisyUI's own shadow. */
 .btn:not(.btn-ghost) {
 	border: 2px solid var(--color-base-content);
