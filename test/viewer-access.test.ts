@@ -86,8 +86,15 @@ describe('viewer access', () => {
 		// Its own email: the limiter's counts outlive the tests (bootstraps as admin).
 		const headers = await accessHeaders('boucle@exemple.fr');
 		const statuses = [];
-		for (let i = 0; i < 61; i++) statuses.push((await fetchPage('/', headers)).status);
+		let lastResponse: Response | undefined;
+		for (let i = 0; i < 61; i++) {
+			lastResponse = await fetchPage('/', headers);
+			statuses.push(lastResponse.status);
+		}
 		expect(statuses.slice(0, 60)).toEqual(Array(60).fill(200));
 		expect(statuses[60]).toBe(429);
+		const html = await lastResponse!.text();
+		expect(html).toContain('<h1>Trop de requêtes</h1>');
+		expect(html).toContain('data-status="429"');
 	});
 });

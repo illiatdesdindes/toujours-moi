@@ -9,7 +9,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (!email) error(403, 'Accès refusé');
 	// Before the users lookup, so a looping client doesn't reach D1.
 	const { success } = await env.VIEWER_RATE_LIMIT.limit({ key: email });
-	if (!success) error(429, 'Trop de requêtes, réessaie dans une minute');
+	if (!success) error(429, 'Trop de requêtes');
 	const viewer = await findOrBootstrapViewer(env.DB, email);
 	if (!viewer) error(403, 'Accès refusé');
 	event.locals.viewer = viewer;

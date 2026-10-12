@@ -47,13 +47,38 @@
 				margin: 0;
 				opacity: 0.7;
 			}
+			a {
+				display: inline-block;
+				margin-top: 1.25rem;
+				padding: 0.5rem 1.25rem;
+				border: 2px solid #1d2440;
+				border-radius: 0.5rem;
+				box-shadow: 3px 3px 0 #1d2440;
+				background: #ff6b6b;
+				color: #1d2440;
+				font-weight: 700;
+				text-decoration: none;
+			}
+			a:focus-visible {
+				outline: 3px solid #1d2440;
+				outline-offset: 2px;
+			}
+			/* One static page for every status: show the hint that fits it. */
+			[data-status='429'] .hint-refused,
+			body:not([data-status='429']) .hint-rate-limited {
+				display: none;
+			}
 		</style>
 	</head>
-	<body>
+	<body data-status="%sveltekit.status%">
 		<main>
 			<img src="/icon-192.png" alt="" />
 			<h1>%sveltekit.error.message%</h1>
-			<p>Si ça ne devrait pas arriver, demande à l'admin de la famille.</p>
+			<p class="hint-refused">Si ça ne devrait pas arriver, demande à l'admin de la famille.</p>
+			<div class="hint-rate-limited">
+				<p>Attends une minute, puis réessaie.</p>
+				<a href="">Réessayer</a>
+			</div>
 		</main>
 	</body>
 </html>

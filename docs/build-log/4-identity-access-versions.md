@@ -39,6 +39,12 @@
 - **`GLOSSARY.md` created** with this ticket's terms (User, Role, Admin/active admin, Bootstrap admin, Viewer, PersonRef, Access policy, Family profile, Versioned table, Version, Change kind). `canViewFamille` renamed `canViewFamilyProfile` (English code; "Famille" stays the UI word). No ADR: nothing here is hard to reverse yet.
 - **`keepsAnActiveAdmin` takes `member.isActive`**: changing a deactivated admin never loses an active admin, as in the prototype's `isLastActiveAdmin`. #9 passes `deleted_at IS NULL`.
 
+## Decisions from QA
+
+- **One static `src/error.html`, hint picked by status**: `<body data-status="%sveltekit.status%">` and two CSS rules show the admin hint only for 403 and a "Attends une minute, puis réessaie." line plus a "Réessayer" link (`href=""`, reloads the page) only for 429. Options were a neutral line for both, inline JS, or this; CSS needs no script and keeps each page's advice right.
+- **429 message shortened to "Trop de requêtes"** (h1, tab title and the `__data.json` JSON message); the wait advice moved to the 429 line. Replaces the earlier "Trop de requêtes, réessaie dans une minute".
+- **`src/routes/+error.svelte` shows the error's own message** for anything but a 404, so a 403/429 met on client-side navigation no longer reads "Cette page n'existe pas.".
+
 ## Deviations from spec
 
 - **`saveWithVersion(db, tableName, recordId, changes, changedByUserId)`**: `db` is an extra first parameter the spec's signature (Q7, #4) leaves out. The module has no global binding to read, and passing it keeps the function testable against the test D1.
@@ -46,3 +52,4 @@
 ## Skipped review/QA findings
 
 - None. The 429 register finding came twice (same fix).
+- **QA: a viewer deactivated mid-session keeps navigating client-side** (part a): skipped, out of scope. Pages have no server load yet, so nothing is fetched or shown that the server would refuse; #5+ server loads and actions are the gate, and each goes through `handle`. Forcing a root-layout rerun on every navigation would only add a request (and rate-limit spend) per tab switch. Part (b), the 404 copy for every status, is fixed above. The two 429-hint findings were the same fix.
