@@ -20,10 +20,25 @@ brackets when there is one.
 - **Family profile** [Famille]: the profile option that shows the whole household, for parents and
   the admin (spec Q8). Code says `familyProfile`, not `famille`.
 
+## Chores
+
+- **Chore** [tâche]: one thing someone did, for a duration (multiple of 15 min, 15 min to 24 h),
+  from a start time (`started_at`, UTC). Never in the future (spec Q3).
+- **Chore type** [type de tâche]: a catalog entry (icon emoji, short and full label). Archived types
+  drop out of the picker; past chores keep them (spec Q2).
+- **Performer** [fait par]: who did the chore (`performer_user_id`). **Author**: who logged it
+  (`author_user_id`), set by the server, never shown. A chore "logged for" someone has a performer
+  who isn't its author.
+- **Quick log**: the home's two taps (duration, then type) that log a chore (spec Q4).
+- **Pending chore**: a quick-logged chore during its 5 s countdown, before it's committed; Annuler
+  drops it, Modifier takes it to the edit sheet (`pending-chore.ts`).
+- **Chore outbox**: the `localStorage` queue of committed chores the server doesn't have yet,
+  retried until it does (`chore-outbox.ts`, spec Q20 point 1).
+
 ## Version log
 
 - **Versioned table**: a table whose every change goes through `saveWithVersion()` and leaves one
-  row in `record_versions` (spec Q7). Today `users`; `chores` and `chore_types` come with #5/#9.
+  row in `record_versions` (spec Q7): `users`, `chores` and `chore_types`.
 - **Version**: one `record_versions` row: the full row after a change (`record_snapshot_json`),
   numbered by the row's `update_count`.
 - **Change kind**: `created`, `updated` or `deleted` (the soft delete that sets `deleted_at`).
