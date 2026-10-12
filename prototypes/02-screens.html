@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TJM — écrans</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.43/daisyui.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.8"></script>
+<script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+	[v-cloak] { display: none; }
+	body { background: #e9e6e1; font-family: system-ui, sans-serif; }
+	[data-theme='pop'] {
+		color-scheme: light;
+		--color-base-100: #fdfbf6; --color-base-200: #f3efe4; --color-base-300: #e4ddca; --color-base-content: #1d2440;
+		--color-neutral: #1d2440; --color-neutral-content: #fdfbf6;
+		--color-secondary: #ffd23f; --color-secondary-content: #1d2440;
+		--color-accent: #ff6b6b; --color-accent-content: #1d2440;
+		--color-info: #4d96ff; --color-info-content: #1d2440; --color-success: #3ccf91; --color-success-content: #1d2440;
+		--color-warning: #ffb347; --color-warning-content: #1d2440; --color-error: #e5484d; --color-error-content: #fff;
+		--radius-selector: 0.5rem; --radius-field: 0.5rem; --radius-box: 0.75rem;
+		--size-selector: 0.25rem; --size-field: 0.25rem; --border: 2px; --depth: 0; --noise: 0;
+		font-family: 'Space Grotesk', 'Noto Color Emoji', system-ui, sans-serif;
+	}
+	[data-theme='pop'] .pop-edge { border: 2px solid var(--color-base-content); box-shadow: 3px 3px 0 var(--color-base-content); }
+	[data-theme='pop'] .btn:not(.btn-ghost) { border: 2px solid var(--color-base-content); box-shadow: 2px 2px 0 var(--color-base-content); }
+	[data-theme='pop'] .btn:active { box-shadow: none; translate: 2px 2px; }
+	.frame-phone { width: 390px; height: 800px; border-radius: 2.5rem; border: 10px solid #000; }
+	.frame-desktop { width: min(1180px, 100%); height: 760px; border-radius: 0.75rem; border: 2px solid #000; }
+	.progress-fill { transition-property: width, height; transition-timing-function: linear; }
+</style>
+</head>
+<body>
+<div id="app" v-cloak class="flex flex-col gap-4 p-4 xl:flex-row xl:items-start">
+
+<!-- ═══════════════ Prototype toolbar (not part of the app) ═══════════════ -->
+<aside class="w-full shrink-0 space-y-3 rounded-xl bg-white p-4 text-sm shadow xl:sticky xl:top-4 xl:w-72">
+	<h1 class="text-lg font-bold">TJM · prototype 02</h1>
+	<label class="block">Je suis
+		<select class="select select-sm w-full" v-model="state.role" @change="state.profileKey = 'me'">
+			<option value="admin">Papa (admin)</option><option value="parent">Maman (parent)</option><option value="child">Léa (enfant)</option>
+		</select>
+	</label>
+	<div class="join w-full">
+		<button class="btn btn-sm join-item flex-1" :class="{ 'btn-neutral': state.viewport === 'phone' }" @click="state.viewport = 'phone'">📱 Mobile</button>
+		<button class="btn btn-sm join-item flex-1" :class="{ 'btn-neutral': state.viewport === 'desktop' }" @click="state.viewport = 'desktop'">🖥️ Desktop</button>
+	</div>
+	<label class="block">Carte en attente (variante)
+		<select class="select select-sm w-full" v-model="state.pendingVariant">
+			<option value="card">A · carte en bas + barre</option>
+			<option value="tile">B · la tuile se remplit</option>
+			<option value="banner">C · bandeau en haut</option>
+		</select>
+	</label>
+	<label class="flex items-center gap-2"><input type="checkbox" class="toggle toggle-sm" v-model="state.iconOnly" /> Types en icône seule</label>
+	<label class="flex items-center gap-2"><input type="checkbox" class="toggle toggle-sm" v-model="state.simulateNotInstalled" /> Mobile non installé (écran d'installation)</label>
+	<div>
+		<p class="font-semibold">🔔 Notifications simulées</p>
+		<p class="text-xs opacity-60">Qui reçoit quoi à chaque enregistrement (règles Q11).</p>
+		<ul class="mt-1 max-h-64 space-y-1 overflow-y-auto text-xs">
+			<li v-for="(sentNotification, index) in state.sentNotifications" :key="index" class="rounded bg-base-200 p-1.5">
+				<b>→ {{ sentNotification.recipientName }}</b> : {{ sentNotification.title }} — {{ sentNotification.body }}
+			</li>
+			<li v-if="!state.sentNotifications.length" class="opacity-50">Rien encore.</li>
+		</ul>
+	</div>
+</aside>
+
+<!-- ═══════════════ App frame ═══════════════ -->
+<main class="flex flex-1 justify-center">
+<div data-theme="pop" class="@container relative shrink-0 overflow-hidden bg-base-100 text-base-content shadow-2xl"
+	:class="state.viewport === 'phone' ? 'frame-phone' : 'frame-desktop'" :style="pageColourStyle">
+
+	<!-- Install screen -->
+	<div v-if="state.simulateNotInstalled && state.viewport === 'phone'" class="flex h-full flex-col items-center justify-center gap-5 p-8 text-center">
+		<div class="pop-edge grid size-24 place-items-center rounded-3xl bg-secondary text-4xl font-black">TJM</div>
+		<h2 class="text-2xl font-bold">Installe TJM</h2>
+		<p>TJM s'utilise comme une application. Installe-la sur ton téléphone pour noter tes tâches en deux taps et recevoir les notifications.</p>
+		<button class="btn btn-primary btn-lg w-full" @click="state.simulateNotInstalled = false">Installer TJM</button>
+		<p class="text-sm opacity-70">Pas de bouton ? Menu <b>⋮</b> du navigateur → <b>Installer l'application</b>.</p>
+	</div>
+
+	<div v-else class="flex h-full">
+		<!-- desktop sidebar -->
+		<nav class="hidden w-56 shrink-0 flex-col gap-1 border-r-2 border-base-content bg-base-200 p-4 @3xl:flex">
+			<span class="mb-4 text-2xl font-black">TJM</span>
+			<button v-for="tab in tabs" :key="tab.page" class="btn justify-start" :class="state.page === tab.page ? 'btn-primary' : 'btn-ghost'" @click="state.page = tab.page">
+				<span class="text-lg">{{ tab.icon }}</span>{{ tab.label }}
+			</button>
+		</nav>
+
+		<div class="relative flex min-w-0 flex-1 flex-col">
+			<!-- header -->
+			<header class="flex items-center justify-between gap-2 border-b-2 border-base-content bg-primary px-4 py-3 text-primary-content">
+				<span class="text-lg font-black @3xl:hidden">TJM</span>
+				<span class="hidden text-lg font-bold @3xl:block">{{ currentTabLabel }}</span>
+				<select v-if="profileOptions.length > 1 && state.page !== 'settings'" v-model="state.profileKey"
+					class="select select-sm w-auto border-2 border-base-content bg-base-100 font-semibold text-base-content">
+					<option v-for="profileOption in profileOptions" :key="profileOption.key" :value="profileOption.key">{{ profileOption.label }}</option>
+				</select>
+				<span v-else class="font-semibold">{{ viewer.name }}</span>
+			</header>
+
+			<!-- C: banner pending -->
+			<div v-if="state.pending && state.pendingVariant === 'banner'" class="pop-edge absolute inset-x-3 top-16 z-20 overflow-hidden rounded-box bg-secondary text-secondary-content">
+				<div class="flex items-center gap-2 p-2.5 text-sm">
+					<span class="text-xl">{{ typeByKey(state.pending.chore.choreTypeKey).icon }}</span>
+					<b class="flex-1">{{ pendingSummary }}</b>
+					<button class="btn btn-xs" @click="editPending">Modifier</button>
+					<button class="btn btn-xs" @click="cancelPending">Annuler</button>
+				</div>
+				<div class="h-1 bg-base-content/20"><div class="progress-fill h-full bg-base-content" :style="pendingFillStyle('width')"></div></div>
+			</div>
+
+			<div :key="state.page" class="flex-1 overflow-y-auto px-4 pb-28 pt-4 @3xl:px-8 @3xl:pb-8">
+			<div class="mx-auto max-w-3xl">
+
+			<!-- ═══════ Accueil ═══════ -->
+			<section v-if="state.page === 'home'">
+				<div class="@3xl:grid @3xl:grid-cols-[18rem_1fr] @3xl:gap-8">
+				<div>
+					<p class="text-sm font-semibold opacity-70">Combien de temps ?</p>
+					<div class="my-2 flex items-center justify-between">
+						<button class="btn btn-circle btn-lg" @click="state.homeMinutes = clampDuration(state.homeMinutes - 15)">−</button>
+						<span class="text-4xl font-bold tabular-nums">{{ formatDuration(state.homeMinutes) }}</span>
+						<button class="btn btn-circle btn-lg" @click="state.homeMinutes = clampDuration(state.homeMinutes + 15)">+</button>
+					</div>
+					<div class="mb-4 flex flex-wrap gap-1.5">
+						<button v-for="chip in durationChips" :key="chip" class="btn btn-xs" :class="state.homeMinutes === chip ? 'btn-primary' : ''" @click="state.homeMinutes = chip">{{ formatDuration(chip) }}</button>
+					</div>
+				</div>
+				<div>
+					<p class="text-sm font-semibold opacity-70">Quoi ? <span class="font-normal">(un tap enregistre)</span></p>
+					<div class="mt-2 grid grid-cols-4 gap-2 @3xl:grid-cols-6">
+						<button v-for="choreType in activeChoreTypes" :key="choreType.key"
+							class="pop-edge relative flex flex-col items-center justify-center gap-1 overflow-hidden rounded-box bg-base-200 p-2 transition active:scale-95"
+							:class="[state.iconOnly ? 'aspect-square' : 'min-h-20', isTilePending(choreType) ? '' : (state.pending && state.pendingVariant === 'tile' ? 'opacity-40' : '')]"
+							:title="choreType.full" :aria-label="choreType.full"
+							@click="isTilePending(choreType) ? cancelPending() : startPending(choreType)">
+							<span v-if="isTilePending(choreType)" class="progress-fill absolute inset-x-0 bottom-0 bg-primary/50" :style="pendingFillStyle('height')"></span>
+							<span class="relative text-2xl">{{ choreType.icon }}</span>
+							<span v-if="!state.iconOnly || isTilePending(choreType)" class="relative text-center text-[0.68rem] font-semibold leading-tight">{{ isTilePending(choreType) ? 'Annuler' : choreType.short }}</span>
+						</button>
+					</div>
+					<button v-if="state.pending && state.pendingVariant === 'tile'" class="btn btn-sm btn-block mt-2" @click="editPending">Modifier « {{ pendingSummary }} »</button>
+
+					<!-- derived line, expands inline -->
+					<div class="mt-4 rounded-field border-2 border-base-content bg-base-200">
+						<button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm" @click="state.homeDetailsOpen = !state.homeDetailsOpen">
+							<span>{{ state.homeDetailsOpen ? '▾' : '▸' }}</span>
+							<span>{{ homeDetailsSummary }}</span>
+						</button>
+						<div v-if="state.homeDetailsOpen" class="grid grid-cols-2 gap-2 border-t-2 border-base-content p-3 text-sm">
+							<label>Date<input type="date" class="input input-sm w-full" v-model="state.homeOverride.date" :max="todayIso()" /></label>
+							<label>Début<input type="time" step="900" class="input input-sm w-full" v-model="state.homeOverride.time" /></label>
+							<label v-if="performerOptions.length > 1" class="col-span-2">Fait par
+								<select class="select select-sm w-full" v-model="state.homeOverride.performerId">
+									<option :value="null">{{ userById(defaultPerformerId).name }} (par défaut)</option>
+									<option v-for="performer in performerOptions" :key="performer.id" :value="performer.id">{{ performer.name }}</option>
+								</select>
+							</label>
+							<label class="col-span-2">Note<input class="input input-sm w-full" v-model="state.homeOverride.note" placeholder="facultatif" /></label>
+							<p class="col-span-2 text-xs opacity-60">Laisse date/début vides pour « maintenant − durée ».</p>
+						</div>
+					</div>
+				</div>
+				</div>
+			</section>
+
+			<!-- ═══════ Historique ═══════ -->
+			<section v-if="state.page === 'history'">
+				<div v-for="dayGroup in historyDayGroups" :key="dayGroup.dayIso" class="mb-4">
+					<h3 class="mb-1 flex justify-between text-sm font-bold"><span class="first-letter:uppercase">{{ dayGroup.label }}</span><span>{{ formatDuration(dayGroup.totalMinutes) }}</span></h3>
+					<ul class="pop-edge divide-y-2 divide-base-content/15 rounded-box bg-base-100">
+						<li v-for="chore in dayGroup.chores" :key="chore.id">
+							<button class="flex w-full items-center gap-3 px-3 py-2 text-left" @click="openEditSheet(chore)">
+								<span class="text-xl">{{ typeByKey(chore.choreTypeKey).icon }}</span>
+								<span class="min-w-0 flex-1">
+									<span class="block font-semibold">{{ typeByKey(chore.choreTypeKey).short }}
+										<span v-if="state.profileKey === 'famille'" class="ml-1 inline-flex items-center gap-1 text-xs font-normal"><span class="size-2.5 rounded-full" :style="{ background: colourOf(userById(chore.performerId)).bg }"></span>{{ userById(chore.performerId).name }}</span>
+									</span>
+									<span v-if="chore.note" class="block truncate text-xs opacity-60">{{ chore.note }}</span>
+								</span>
+								<span v-if="viewer.role === 'admin' && chore.updateCount" class="badge badge-sm badge-secondary">✎ {{ chore.updateCount }}</span>
+								<span v-if="!canEditChore(chore)" class="text-xs opacity-50">🔒</span>
+								<span class="text-right text-sm tabular-nums"><b>{{ formatDuration(chore.minutes) }}</b><br /><span class="opacity-60">{{ formatTime(chore.startedAt) }}</span></span>
+							</button>
+						</li>
+					</ul>
+				</div>
+				<p v-if="!historyDayGroups.length" class="py-10 text-center opacity-60">Aucune tâche pour l'instant.</p>
+				<p v-else class="text-center text-xs opacity-50">(défilement infini : 50 par page)</p>
+			</section>
+
+			<!-- ═══════ Rapports ═══════ -->
+			<section v-if="state.page === 'reports'" class="space-y-4">
+				<div class="tabs tabs-box w-full">
+					<button v-for="periodTab in periodTabs" :key="periodTab.period" class="tab flex-1" :class="{ 'tab-active': state.reportPeriod === periodTab.period }" @click="state.reportPeriod = periodTab.period; state.reportOffset = 0">{{ periodTab.label }}</button>
+				</div>
+				<div class="flex items-center gap-2">
+					<button class="btn btn-sm btn-square" @click="state.reportOffset--">‹</button>
+					<span class="flex-1 text-center font-semibold first-letter:uppercase">{{ reportRange.label }}</span>
+					<button class="btn btn-sm btn-square" :disabled="state.reportOffset === 0" @click="state.reportOffset++">›</button>
+					<button v-if="state.reportOffset !== 0" class="btn btn-sm" @click="state.reportOffset = 0">Aujourd'hui</button>
+				</div>
+
+				<div class="pop-edge rounded-box bg-secondary p-4 text-secondary-content">
+					<p class="text-4xl font-bold">{{ formatDuration(reportStats.totalMinutes) }}</p>
+					<p>{{ reportStats.choreCount }} tâche{{ reportStats.choreCount > 1 ? 's' : '' }}</p>
+					<p class="text-sm opacity-80">{{ reportComparisonLabel }}</p>
+				</div>
+
+				<div v-if="reportRange.buckets.length" class="pop-edge rounded-box bg-base-100 p-3">
+					<p class="mb-2 text-sm font-semibold">Dans le temps</p>
+					<div class="flex h-32 items-end gap-0.5">
+						<div v-for="bucket in reportBuckets" :key="bucket.label + bucket.index" class="flex h-full flex-1 flex-col items-center justify-end" :title="bucket.title">
+							<div class="flex w-full flex-col-reverse overflow-hidden rounded-t" :style="{ height: bucket.heightPercent + '%' }">
+								<div v-for="segment in bucket.segments" :key="segment.userId" :style="{ flexGrow: segment.minutes, background: segment.colour }"></div>
+							</div>
+						</div>
+					</div>
+					<div class="mt-1 flex gap-0.5 text-center text-[0.6rem] opacity-60">
+						<span v-for="bucket in reportBuckets" :key="'l' + bucket.index" class="flex-1">{{ bucket.label }}</span>
+					</div>
+				</div>
+
+				<div class="pop-edge rounded-box bg-base-100 p-3">
+					<p class="mb-2 text-sm font-semibold">Par type</p>
+					<div v-for="typeRow in reportStats.byType" :key="typeRow.choreType.key" class="mb-2">
+						<div class="flex justify-between text-sm"><span>{{ typeRow.choreType.icon }} {{ typeRow.choreType.short }} <span class="opacity-50">×{{ typeRow.count }}</span></span><span><b>{{ formatDuration(typeRow.minutes) }}</b> · {{ typeRow.percent }} %</span></div>
+						<div class="h-2.5 rounded-full bg-base-200"><div class="h-full rounded-full bg-primary" :style="{ width: typeRow.percent + '%' }"></div></div>
+					</div>
+					<p v-if="!reportStats.byType.length" class="text-sm opacity-60">Rien sur cette période.</p>
+				</div>
+
+				<div v-if="state.profileKey === 'famille'" class="pop-edge rounded-box bg-base-100 p-3">
+					<p class="mb-2 text-sm font-semibold">Par personne</p>
+					<div v-for="personRow in reportStats.byPerson" :key="personRow.user.id" class="mb-2">
+						<div class="flex justify-between text-sm"><span>{{ personRow.user.name }}</span><span><b>{{ formatDuration(personRow.minutes) }}</b> · {{ personRow.percent }} %</span></div>
+						<div class="h-2.5 rounded-full bg-base-200"><div class="h-full rounded-full" :style="{ width: personRow.percent + '%', background: colourOf(personRow.user).bg }"></div></div>
+					</div>
+				</div>
+			</section>
+
+			<!-- ═══════ Réglages ═══════ -->
+			<section v-if="state.page === 'settings'" class="space-y-5">
+				<div class="pop-edge space-y-3 rounded-box bg-base-100 p-4">
+					<h3 class="font-bold">Mon profil</h3>
+					<label class="block text-sm">Prénom<input class="input w-full" v-model="viewer.name" /></label>
+					<div class="text-sm">Couleur
+						<div class="mt-1 flex flex-wrap gap-2">
+							<button v-for="colour in personalColours" :key="colour.key" class="size-8 rounded-full border-2 border-base-content" :class="{ 'ring-2 ring-base-content ring-offset-2': viewer.colourKey === colour.key }" :style="{ background: colour.bg }" :title="colour.label" @click="viewer.colourKey = colour.key"></button>
+						</div>
+					</div>
+					<div class="flex items-center justify-between text-sm">
+						<label class="flex items-center gap-2"><input type="checkbox" class="toggle toggle-primary" v-model="state.notificationsOnThisDevice" /> Notifications sur cet appareil</label>
+						<button class="btn btn-sm" :disabled="!state.notificationsOnThisDevice" @click="showToast('🔔 Notification de test envoyée')">Tester</button>
+					</div>
+				</div>
+
+				<div v-if="viewer.role === 'parent'" class="pop-edge space-y-3 rounded-box bg-base-100 p-4">
+					<h3 class="font-bold">Enfants</h3>
+					<div v-for="child in activeUsers.filter((user) => user.role === 'child')" :key="child.id" class="flex flex-wrap items-center gap-2">
+						<input class="input input-sm w-32" v-model="child.name" />
+						<button v-for="colour in personalColours" :key="colour.key" class="size-6 rounded-full border-2 border-base-content" :class="{ 'ring-2 ring-base-content ring-offset-1': child.colourKey === colour.key }" :style="{ background: colour.bg }" @click="child.colourKey = colour.key"></button>
+					</div>
+				</div>
+
+				<div v-if="viewer.role === 'admin'" class="pop-edge space-y-3 rounded-box bg-base-100 p-4">
+					<h3 class="font-bold">Membres</h3>
+					<div v-for="member in state.users" :key="member.id" class="flex flex-wrap items-center gap-2 text-sm" :class="{ 'opacity-40': member.deactivatedAt }">
+						<span class="size-3 rounded-full" :style="{ background: colourOf(member).bg }"></span>
+						<span class="w-20 font-semibold">{{ member.name }}</span>
+						<span class="flex-1 truncate opacity-60">{{ member.email }}</span>
+						<select class="select select-xs w-24" v-model="member.role" :disabled="isLastActiveAdmin(member)">
+							<option value="admin">admin</option><option value="parent">parent</option><option value="child">enfant</option>
+						</select>
+						<button class="btn btn-xs" :disabled="isLastActiveAdmin(member)" @click="member.deactivatedAt = member.deactivatedAt ? null : Date.now()">{{ member.deactivatedAt ? 'Réactiver' : 'Désactiver' }}</button>
+					</div>
+					<form class="grid grid-cols-2 gap-2 border-t-2 border-base-content/15 pt-3 text-sm @3xl:grid-cols-4" @submit.prevent="addMember">
+						<input class="input input-sm" type="email" required placeholder="email" v-model="state.newMember.email" />
+						<input class="input input-sm" required placeholder="prénom" v-model="state.newMember.name" />
+						<select class="select select-sm" v-model="state.newMember.role"><option value="parent">parent</option><option value="child">enfant</option><option value="admin">admin</option></select>
+						<button class="btn btn-sm btn-primary">Ajouter</button>
+					</form>
+					<div v-if="state.accessReminderEmail" class="alert alert-warning text-sm">Ajoute aussi <b>{{ state.accessReminderEmail }}</b> à la politique Cloudflare Access, sinon cette personne ne pourra pas se connecter.</div>
+				</div>
+
+				<div v-if="viewer.role === 'admin'" class="pop-edge space-y-2 rounded-box bg-base-100 p-4">
+					<h3 class="font-bold">Types de tâches</h3>
+					<div v-for="(choreType, index) in state.choreTypes" :key="choreType.key" class="flex items-center gap-2 text-sm" :class="{ 'opacity-40': choreType.archived }">
+						<input class="input input-sm w-14 text-center" v-model="choreType.icon" />
+						<input class="input input-sm flex-1" v-model="choreType.short" />
+						<button class="btn btn-xs btn-square" :disabled="index === 0" @click="moveChoreType(index, -1)">↑</button>
+						<button class="btn btn-xs btn-square" :disabled="index === state.choreTypes.length - 1" @click="moveChoreType(index, 1)">↓</button>
+						<button class="btn btn-xs w-20" @click="choreType.archived = !choreType.archived">{{ choreType.archived ? 'Restaurer' : 'Archiver' }}</button>
+					</div>
+					<button class="btn btn-sm" @click="state.choreTypes.push({ key: 'custom_' + Date.now(), icon: '🧽', short: 'Nouveau', full: 'Nouveau', archived: false })">+ Ajouter un type</button>
+				</div>
+			</section>
+
+			</div>
+			</div>
+
+			<!-- A: bottom card pending -->
+			<div v-if="state.pending && state.pendingVariant === 'card'" class="pop-edge absolute inset-x-3 bottom-20 z-20 overflow-hidden rounded-box bg-primary text-primary-content @3xl:bottom-6 @3xl:left-auto @3xl:w-96">
+				<div class="flex items-center gap-3 p-3">
+					<span class="text-2xl">{{ typeByKey(state.pending.chore.choreTypeKey).icon }}</span>
+					<div class="flex-1 text-sm leading-tight"><p class="font-bold">{{ pendingSummary }}</p><p class="opacity-80">{{ formatDayTime(state.pending.chore.startedAt) }}</p></div>
+					<button class="btn btn-sm" @click="editPending">Modifier</button>
+					<button class="btn btn-sm" @click="cancelPending">Annuler</button>
+				</div>
+				<div class="h-1.5 bg-primary-content/30"><div class="progress-fill h-full bg-primary-content" :style="pendingFillStyle('width')"></div></div>
+			</div>
+
+			<!-- toast -->
+			<div v-if="state.toast" class="pop-edge absolute inset-x-3 bottom-20 z-30 rounded-box bg-neutral p-3 text-sm text-neutral-content @3xl:bottom-6 @3xl:left-auto @3xl:w-96">{{ state.toast }}</div>
+
+			<!-- mobile dock -->
+			<nav class="dock absolute bottom-0 border-t-2 border-base-content bg-base-200 @3xl:hidden">
+				<button v-for="tab in tabs" :key="tab.page" :class="{ 'dock-active text-primary': state.page === tab.page }" @click="state.page = tab.page">
+					<span class="text-xl">{{ tab.icon }}</span><span class="dock-label">{{ tab.label }}</span>
+				</button>
+			</nav>
+
+			<!-- edit sheet -->
+			<div v-if="state.sheet" class="absolute inset-0 z-40 flex items-end bg-black/40 @3xl:items-center @3xl:justify-center" @click.self="state.sheet = null">
+				<div class="pop-edge max-h-[90%] w-full overflow-y-auto rounded-t-box bg-base-100 p-4 @3xl:max-w-lg @3xl:rounded-box">
+					<div class="mb-3 flex items-center justify-between">
+						<h3 class="text-lg font-bold">{{ state.sheet.readOnly ? 'Tâche' : (state.sheet.mode === 'pending' ? 'Modifier avant d\'enregistrer' : 'Modifier la tâche') }}</h3>
+						<button class="btn btn-sm btn-ghost btn-circle" @click="state.sheet = null">✕</button>
+					</div>
+					<p v-if="state.sheet.readOnly" class="alert mb-3 text-sm">🔒 Notée par {{ userById(state.sheet.draft.authorId).name }} : tu ne peux pas la modifier.</p>
+					<fieldset :disabled="state.sheet.readOnly" class="space-y-3">
+						<div class="flex items-center justify-between">
+							<button type="button" class="btn btn-circle" @click="state.sheet.draft.minutes = clampDuration(state.sheet.draft.minutes - 15)">−</button>
+							<span class="text-3xl font-bold tabular-nums">{{ formatDuration(state.sheet.draft.minutes) }}</span>
+							<button type="button" class="btn btn-circle" @click="state.sheet.draft.minutes = clampDuration(state.sheet.draft.minutes + 15)">+</button>
+						</div>
+						<div class="grid grid-cols-4 gap-1.5">
+							<button v-for="choreType in activeChoreTypes" :key="choreType.key" type="button" class="flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-field border-2 p-1" :class="state.sheet.draft.choreTypeKey === choreType.key ? 'border-base-content bg-primary text-primary-content' : 'border-base-content/20 bg-base-200'" :title="choreType.full" :aria-label="choreType.full" @click="state.sheet.draft.choreTypeKey = choreType.key">
+								<span class="emoji text-xl">{{ choreType.icon }}</span><span class="text-center text-[0.65rem] font-semibold leading-tight">{{ choreType.short }}</span>
+							</button>
+						</div>
+						<div class="grid grid-cols-2 gap-2 text-sm">
+							<label>Date<input type="date" class="input input-sm w-full" v-model="state.sheet.draft.date" :max="todayIso()" /></label>
+							<label>Début<input type="time" step="900" class="input input-sm w-full" v-model="state.sheet.draft.time" /></label>
+						</div>
+						<label v-if="performerOptions.length > 1" class="block text-sm">Fait par
+							<select class="select select-sm w-full" v-model="state.sheet.draft.performerId">
+								<option v-for="performer in performerOptions" :key="performer.id" :value="performer.id">{{ performer.name }}</option>
+							</select>
+						</label>
+						<label class="block text-sm">Note<input class="input input-sm w-full" v-model="state.sheet.draft.note" placeholder="facultatif" /></label>
+						<p v-if="sheetError" class="text-sm font-semibold text-error">{{ sheetError }}</p>
+					</fieldset>
+					<div v-if="!state.sheet.readOnly" class="mt-4 flex gap-2">
+						<button v-if="state.sheet.mode === 'existing'" class="btn btn-error btn-outline" @click="deleteChoreFromSheet">Supprimer</button>
+						<button class="btn btn-primary flex-1" :disabled="!!sheetError" @click="saveSheet">Enregistrer</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</main>
+</div>
+
+<script>
+const { createApp, reactive, computed } = Vue;
+
+// ───── Constants & seed data ─────
+const PENDING_DELAY_MS = 5000;
+const MAX_DURATION_MINUTES = 24 * 60;
+const QUARTER_MS = 15 * 60 * 1000;
+
+const personalColours = [
+	['tomato', 'Tomate', '#c43a26', '#ffffff'], ['tangerine', 'Mandarine', '#f08a24', '#2a1300'],
+	['mustard', 'Moutarde', '#d9a404', '#241a00'], ['sage', 'Sauge', '#7fa878', '#10200f'],
+	['turquoise', 'Turquoise', '#1aa39a', '#00201e'], ['cornflower', 'Bleuet', '#4565d0', '#ffffff'],
+	['lavender', 'Lavande', '#a58bd8', '#1a1030'], ['raspberry', 'Framboise', '#c2185b', '#ffffff']
+].map(([key, label, bg, fg]) => ({ key, label, bg, fg }));
+const NEUTRAL_COLOUR = { bg: 'var(--color-neutral)', fg: 'var(--color-neutral-content)' };
+
+const seedChoreTypes = [
+	['dishes', 'Vaisselle', 'Vaisselle', '🍽️'], ['cooking', 'Repas', 'Cuisine / repas', '🍳'],
+	['table', 'Table', 'Mettre / débarrasser la table', '🥄'], ['bathroom', 'Salle de bain', 'Salle de bain', '🛁'],
+	['toilets', 'WC', 'Toilettes', '🚽'], ['vacuuming', 'Aspirateur', 'Aspirateur / balai', '🧹'],
+	['mopping', 'Serpillière', 'Serpillière', '🪣'], ['laundry', 'Lessive', 'Lessive (lancer, étendre, plier)', '🧺'],
+	['ironing', 'Repassage', 'Repassage', '👕'], ['groceries', 'Courses', 'Courses', '🛒'],
+	['trash', 'Poubelles', 'Poubelles / tri', '🗑️'], ['tidying', 'Rangement', 'Rangement', '📦'],
+	['bed_linen', 'Lits', 'Lits / draps', '🛏️'], ['garden', 'Jardin', 'Jardin', '🌱'],
+	['pets', 'Animaux', 'Animaux', '🐾'], ['other', 'Autre', 'Autre', '✨']
+].map(([key, short, full, icon]) => ({ key, short, full, icon, archived: false }));
+
+const seedUsers = [
+	{ id: 1, name: 'Papa', email: 'papa@exemple.fr', role: 'admin', colourKey: 'cornflower', deactivatedAt: null },
+	{ id: 2, name: 'Maman', email: 'maman@exemple.fr', role: 'parent', colourKey: 'raspberry', deactivatedAt: null },
+	{ id: 3, name: 'Léa', email: 'lea@exemple.fr', role: 'child', colourKey: 'turquoise', deactivatedAt: null },
+	{ id: 4, name: 'Noé', email: 'noe@exemple.fr', role: 'child', colourKey: 'mustard', deactivatedAt: null }
+];
+const VIEWER_ID_BY_ROLE = { admin: 1, parent: 2, child: 3 };
+
+// Deterministic fake history over the last ~70 days.
+const seedChores = () => {
+	let randomSeed = 7;
+	const random = () => ((randomSeed = (randomSeed * 16807) % 2147483647) / 2147483647);
+	const chores = [];
+	let nextChoreId = 1;
+	for (let daysAgo = 70; daysAgo >= 0; daysAgo--) {
+		for (const user of seedUsers) {
+			const choresThatDay = Math.floor(random() * (user.role === 'child' ? 2 : 3.2));
+			for (let n = 0; n < choresThatDay; n++) {
+				const day = new Date(); day.setHours(0, 0, 0, 0); day.setDate(day.getDate() - daysAgo);
+				const startedAt = day.getTime() + (8 * 4 + Math.floor(random() * 52)) * QUARTER_MS;
+				const minutes = 15 * (1 + Math.floor(random() * (user.role === 'child' ? 3 : 6)));
+				if (startedAt + minutes * 60000 > Date.now()) continue;
+				const authorId = user.role === 'child' && random() < 0.3 ? 2 : user.id;
+				chores.push({
+					id: nextChoreId++, choreTypeKey: seedChoreTypes[Math.floor(random() * 15)].key, minutes, startedAt,
+					performerId: user.id, authorId, note: random() < 0.15 ? 'avec la musique 🎶' : '',
+					updateCount: random() < 0.15 ? 1 + Math.floor(random() * 3) : 0, deletedAt: null
+				});
+			}
+		}
+	}
+	return chores;
+};
+
+// ───── Pure helpers ─────
+const formatDuration = (minutes) => {
+	const hours = Math.floor(minutes / 60), rest = minutes % 60;
+	if (!hours) return `${rest} min`;
+	return rest ? `${hours} h ${String(rest).padStart(2, '0')}` : `${hours} h`;
+};
+const formatSignedDuration = (minutes) => (minutes === 0 ? '=' : `${minutes > 0 ? '+' : '−'}${formatDuration(Math.abs(minutes))}`);
+const clampDuration = (minutes) => Math.min(MAX_DURATION_MINUTES, Math.max(15, minutes));
+const roundToQuarter = (timestamp) => Math.round(timestamp / QUARTER_MS) * QUARTER_MS;
+const pad2 = (n) => String(n).padStart(2, '0');
+const toDateIso = (timestamp) => { const d = new Date(timestamp); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+const toTimeIso = (timestamp) => { const d = new Date(timestamp); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+const fromDateAndTime = (dateIso, timeIso) => new Date(`${dateIso}T${timeIso}`).getTime();
+const todayIso = () => toDateIso(Date.now());
+const formatTime = (timestamp) => toTimeIso(timestamp);
+const formatDayLabel = (timestamp) => {
+	const dayIso = toDateIso(timestamp);
+	if (dayIso === todayIso()) return "aujourd'hui";
+	if (dayIso === toDateIso(Date.now() - 86400000)) return 'hier';
+	return new Date(timestamp).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' });
+};
+const formatDayTime = (timestamp) => `${formatDayLabel(timestamp)}, ${formatTime(timestamp)}`;
+
+// Report period: [start, end) plus the sub-period buckets of the "over time" chart.
+const reportRangeFor = (period, offset) => {
+	const now = new Date();
+	const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	const dayFormat = { day: 'numeric', month: 'short' };
+	if (period === 'day') {
+		const start = new Date(startOfToday); start.setDate(start.getDate() + offset);
+		const end = new Date(start); end.setDate(end.getDate() + 1);
+		return { start: +start, end: +end, label: formatDayLabel(+start), buckets: [] };
+	}
+	if (period === 'week') {
+		const start = new Date(startOfToday); start.setDate(start.getDate() - ((start.getDay() + 6) % 7) + offset * 7);
+		const buckets = 'LMMJVSD'.split('').map((label, index) => {
+			const bucketStart = new Date(start); bucketStart.setDate(bucketStart.getDate() + index);
+			const bucketEnd = new Date(bucketStart); bucketEnd.setDate(bucketEnd.getDate() + 1);
+			return { label, start: +bucketStart, end: +bucketEnd, title: bucketStart.toLocaleDateString('fr-FR', { weekday: 'long', ...dayFormat }) };
+		});
+		const lastDay = new Date(buckets[6].start);
+		return { start: buckets[0].start, end: buckets[6].end, label: `semaine du ${start.toLocaleDateString('fr-FR', dayFormat)} au ${lastDay.toLocaleDateString('fr-FR', dayFormat)}`, buckets };
+	}
+	if (period === 'month') {
+		const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+		const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+		const buckets = [];
+		for (let day = new Date(start); day < end; day.setDate(day.getDate() + 1)) {
+			const bucketEnd = new Date(day); bucketEnd.setDate(bucketEnd.getDate() + 1);
+			buckets.push({ label: day.getDate() % 5 === 1 ? String(day.getDate()) : '', start: +day, end: +bucketEnd, title: day.toLocaleDateString('fr-FR', dayFormat) });
+		}
+		return { start: +start, end: +end, label: start.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), buckets };
+	}
+	const year = now.getFullYear() + offset;
+	const buckets = 'JFMAMJJASOND'.split('').map((label, month) => ({
+		label, start: +new Date(year, month, 1), end: +new Date(year, month + 1, 1),
+		title: new Date(year, month, 1).toLocaleDateString('fr-FR', { month: 'long' })
+	}));
+	return { start: buckets[0].start, end: buckets[11].end, label: String(year), buckets };
+};
+const PREVIOUS_PERIOD_LABEL = { day: 'la veille', week: 'la semaine précédente', month: 'le mois précédent', year: "l'année précédente" };
+
+createApp({
+	setup() {
+		const state = reactive({
+			role: 'admin', viewport: 'phone', pendingVariant: 'card', iconOnly: false, simulateNotInstalled: false,
+			page: 'home', profileKey: 'me',
+			users: seedUsers.map((user) => ({ ...user })), choreTypes: seedChoreTypes.map((t) => ({ ...t })), chores: seedChores(),
+			lastMinutesByUserId: {}, homeMinutes: 45, homeDetailsOpen: false,
+			homeOverride: { date: '', time: '', performerId: null, note: '' },
+			pending: null, sheet: null, toast: null, sentNotifications: [],
+			reportPeriod: 'week', reportOffset: 0,
+			notificationsOnThisDevice: true, newMember: { email: '', name: '', role: 'child' }, accessReminderEmail: null
+		});
+
+		// ───── Lookups ─────
+		const userById = (userId) => state.users.find((user) => user.id === userId);
+		const typeByKey = (choreTypeKey) => state.choreTypes.find((choreType) => choreType.key === choreTypeKey);
+		const colourOf = (user) => personalColours.find((colour) => colour.key === user.colourKey) ?? NEUTRAL_COLOUR;
+		const viewer = computed(() => userById(VIEWER_ID_BY_ROLE[state.role]));
+		const activeUsers = computed(() => state.users.filter((user) => !user.deactivatedAt));
+		const activeChoreTypes = computed(() => state.choreTypes.filter((choreType) => !choreType.archived));
+
+		// ───── Profile switcher (Q8) ─────
+		const profileOptions = computed(() => {
+			if (viewer.value.role === 'child') return [];
+			const visibleUsers = viewer.value.role === 'admin'
+				? activeUsers.value.filter((user) => user.id !== viewer.value.id)
+				: activeUsers.value.filter((user) => user.role === 'child');
+			return [
+				{ key: 'me', label: `${viewer.value.name} (moi)` },
+				...visibleUsers.map((user) => ({ key: user.id, label: user.name })),
+				{ key: 'famille', label: '👪 Famille' }
+			];
+		});
+		const profileUser = computed(() => (state.profileKey === 'me' ? viewer.value : state.profileKey === 'famille' ? null : userById(state.profileKey)));
+		const pageColourStyle = computed(() => {
+			const colour = profileUser.value ? colourOf(profileUser.value) : NEUTRAL_COLOUR;
+			return { '--color-primary': colour.bg, '--color-primary-content': colour.fg };
+		});
+
+		// ───── Permissions (Q6) ─────
+		const canEditChore = (chore) => {
+			const performer = userById(chore.performerId);
+			if (viewer.value.role === 'admin') return true;
+			if (viewer.value.role === 'parent') return chore.performerId === viewer.value.id || performer.role === 'child';
+			return chore.performerId === viewer.value.id && chore.authorId === viewer.value.id;
+		};
+		const performerOptions = computed(() => {
+			if (viewer.value.role === 'child') return [viewer.value];
+			if (viewer.value.role === 'admin') return activeUsers.value;
+			return activeUsers.value.filter((user) => user.id === viewer.value.id || user.role === 'child');
+		});
+		const defaultPerformerId = computed(() => (profileUser.value ?? viewer.value).id);
+
+		// ───── Notifications (Q11) ─────
+		const notificationRecipients = (chore) => activeUsers.value.filter((recipient) => {
+			if (recipient.id === chore.authorId) return false;
+			if (recipient.role !== 'child') return true;
+			return chore.performerId === recipient.id || userById(chore.performerId).role === 'child';
+		});
+		const sendNotifications = (chore) => {
+			const performer = userById(chore.performerId), author = userById(chore.authorId), choreType = typeByKey(chore.choreTypeKey);
+			for (const recipient of notificationRecipients(chore)) {
+				const loggedForRecipient = recipient.id === chore.performerId;
+				state.sentNotifications.unshift({
+					recipientName: recipient.name,
+					title: loggedForRecipient ? `${author.name} a noté pour toi` : `${performer.name} · ${choreType.short}`,
+					body: `${loggedForRecipient ? choreType.short + ' · ' : ''}${formatDuration(chore.minutes)} · ${formatDayTime(chore.startedAt)}`
+				});
+			}
+		};
+
+		// ───── Saving ─────
+		let nextChoreId = 10000;
+		const commitNewChore = (chore) => {
+			state.chores.push({ ...chore, id: nextChoreId++, updateCount: 0, deletedAt: null });
+			state.lastMinutesByUserId[viewer.value.id] = chore.minutes;
+			sendNotifications(chore);
+		};
+		const showToast = (text) => { state.toast = text; setTimeout(() => (state.toast = null), 2200); };
+
+		// ───── Home quick log & pending (Q4, Q5) ─────
+		const homeStartedAt = () => {
+			const { date, time } = state.homeOverride;
+			if (date || time) return fromDateAndTime(date || todayIso(), time || toTimeIso(roundToQuarter(Date.now() - state.homeMinutes * 60000)));
+			return roundToQuarter(Date.now() - state.homeMinutes * 60000);
+		};
+		const homeDetailsSummary = computed(() => {
+			const performerId = state.homeOverride.performerId ?? defaultPerformerId.value;
+			const performerLabel = performerId === viewer.value.id ? 'Moi' : userById(performerId).name;
+			return `${formatDayTime(homeStartedAt())} · ${performerLabel}${state.homeOverride.note ? ' · 📝' : ''}`;
+		});
+		const startPending = (choreType) => {
+			if (state.pending) commitPending(); // a second tap commits the first one
+			const pending = reactive({
+				chore: {
+					choreTypeKey: choreType.key, minutes: state.homeMinutes, startedAt: homeStartedAt(),
+					performerId: state.homeOverride.performerId ?? defaultPerformerId.value, authorId: viewer.value.id, note: state.homeOverride.note
+				},
+				progressStarted: false, timer: null
+			});
+			state.pending = pending;
+			requestAnimationFrame(() => requestAnimationFrame(() => (pending.progressStarted = true)));
+			pending.timer = setTimeout(commitPending, PENDING_DELAY_MS);
+		};
+		const resetHomeOverride = () => { state.homeOverride = { date: '', time: '', performerId: null, note: '' }; state.homeDetailsOpen = false; };
+		const commitPending = () => {
+			if (!state.pending) return;
+			clearTimeout(state.pending.timer);
+			const chore = state.pending.chore;
+			state.pending = null;
+			commitNewChore(chore);
+			resetHomeOverride();
+			showToast(`✓ ${typeByKey(chore.choreTypeKey).short} · ${formatDuration(chore.minutes)} enregistré`);
+		};
+		const cancelPending = () => { clearTimeout(state.pending.timer); state.pending = null; };
+		const editPending = () => {
+			clearTimeout(state.pending.timer);
+			const chore = state.pending.chore;
+			state.pending = null;
+			state.sheet = { mode: 'pending', readOnly: false, draft: draftFromChore(chore) };
+		};
+		const isTilePending = (choreType) => state.pendingVariant === 'tile' && state.pending?.chore.choreTypeKey === choreType.key;
+		const pendingFillStyle = (dimension) => ({ [dimension]: state.pending?.progressStarted ? '100%' : '0%', transitionDuration: state.pending?.progressStarted ? `${PENDING_DELAY_MS}ms` : '0ms' });
+		const pendingSummary = computed(() => state.pending && `${typeByKey(state.pending.chore.choreTypeKey).short} · ${formatDuration(state.pending.chore.minutes)}${state.pending.chore.performerId !== viewer.value.id ? ' · ' + userById(state.pending.chore.performerId).name : ''}`);
+		// Closing or backgrounding the app never loses a quick log.
+		addEventListener('pagehide', commitPending);
+		document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && commitPending());
+
+		// ───── Edit sheet ─────
+		const draftFromChore = (chore) => ({ ...chore, date: toDateIso(chore.startedAt), time: toTimeIso(chore.startedAt) });
+		const openEditSheet = (chore) => { state.sheet = { mode: 'existing', choreId: chore.id, readOnly: !canEditChore(chore), draft: draftFromChore(chore) }; };
+		const sheetError = computed(() => {
+			const draft = state.sheet?.draft;
+			if (!draft || !draft.date || !draft.time) return draft ? 'Date et heure obligatoires' : null;
+			return fromDateAndTime(draft.date, draft.time) + draft.minutes * 60000 > Date.now() ? 'Pas de tâche dans le futur' : null;
+		});
+		const saveSheet = () => {
+			const { date, time, ...draft } = state.sheet.draft;
+			const savedChore = { ...draft, startedAt: fromDateAndTime(date, time) };
+			if (state.sheet.mode === 'pending') {
+				commitNewChore(savedChore);
+				resetHomeOverride();
+			} else {
+				const chore = state.chores.find((c) => c.id === state.sheet.choreId);
+				Object.assign(chore, savedChore, { updateCount: chore.updateCount + 1 });
+			}
+			state.sheet = null;
+			showToast('✓ Enregistré');
+		};
+		const deleteChoreFromSheet = () => {
+			if (!confirm('Supprimer cette tâche ?')) return;
+			state.chores.find((c) => c.id === state.sheet.choreId).deletedAt = Date.now();
+			state.sheet = null;
+			showToast('Tâche supprimée');
+		};
+
+		// ───── Scope: whose chores (Historique & Rapports) ─────
+		const scopedChores = computed(() => state.chores.filter((chore) => !chore.deletedAt && (profileUser.value ? chore.performerId === profileUser.value.id : true)));
+
+		const historyDayGroups = computed(() => {
+			const groupsByDay = new Map();
+			for (const chore of [...scopedChores.value].sort((a, b) => b.startedAt - a.startedAt)) {
+				const dayIso = toDateIso(chore.startedAt);
+				if (!groupsByDay.has(dayIso)) groupsByDay.set(dayIso, { dayIso, label: formatDayLabel(chore.startedAt), totalMinutes: 0, chores: [] });
+				const dayGroup = groupsByDay.get(dayIso);
+				dayGroup.chores.push(chore);
+				dayGroup.totalMinutes += chore.minutes;
+			}
+			return [...groupsByDay.values()];
+		});
+
+		// ───── Rapports (Q9) ─────
+		const reportRange = computed(() => reportRangeFor(state.reportPeriod, state.reportOffset));
+		const choresIn = (start, end) => scopedChores.value.filter((chore) => chore.startedAt >= start && chore.startedAt < end);
+		const sumMinutes = (chores) => chores.reduce((total, chore) => total + chore.minutes, 0);
+		const percentOf = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
+		const reportStats = computed(() => {
+			const chores = choresIn(reportRange.value.start, reportRange.value.end);
+			const totalMinutes = sumMinutes(chores);
+			const previousRange = reportRangeFor(state.reportPeriod, state.reportOffset - 1);
+			const previousMinutes = sumMinutes(choresIn(previousRange.start, previousRange.end));
+			const groupMinutes = (keyOf) => {
+				const groups = new Map();
+				for (const chore of chores) {
+					const group = groups.get(keyOf(chore)) ?? { minutes: 0, count: 0 };
+					group.minutes += chore.minutes; group.count++;
+					groups.set(keyOf(chore), group);
+				}
+				return [...groups.entries()].sort((a, b) => b[1].minutes - a[1].minutes);
+			};
+			return {
+				totalMinutes, choreCount: chores.length, deltaMinutes: totalMinutes - previousMinutes,
+				byType: groupMinutes((chore) => chore.choreTypeKey).map(([choreTypeKey, group]) => ({ choreType: typeByKey(choreTypeKey), ...group, percent: percentOf(group.minutes, totalMinutes) })),
+				byPerson: groupMinutes((chore) => chore.performerId).map(([userId, group]) => ({ user: userById(userId), ...group, percent: percentOf(group.minutes, totalMinutes) }))
+			};
+		});
+		const reportComparisonLabel = computed(() => `${formatSignedDuration(reportStats.value.deltaMinutes)} vs ${PREVIOUS_PERIOD_LABEL[state.reportPeriod]}`);
+		const reportBuckets = computed(() => {
+			const buckets = reportRange.value.buckets.map((bucket, index) => {
+				const chores = choresIn(bucket.start, bucket.end);
+				const minutesByUser = new Map();
+				for (const chore of chores) minutesByUser.set(chore.performerId, (minutesByUser.get(chore.performerId) ?? 0) + chore.minutes);
+				const segments = [...minutesByUser.entries()].map(([userId, minutes]) => ({
+					userId, minutes, colour: state.profileKey === 'famille' ? colourOf(userById(userId)).bg : 'var(--color-primary)'
+				}));
+				return { ...bucket, index, totalMinutes: sumMinutes(chores), segments, title: `${bucket.title} · ${formatDuration(sumMinutes(chores))}` };
+			});
+			const maxMinutes = Math.max(1, ...buckets.map((bucket) => bucket.totalMinutes));
+			return buckets.map((bucket) => ({ ...bucket, heightPercent: (bucket.totalMinutes / maxMinutes) * 100 }));
+		});
+
+		// ───── Réglages (Q10) ─────
+		const isLastActiveAdmin = (member) => member.role === 'admin' && !member.deactivatedAt && activeUsers.value.filter((user) => user.role === 'admin').length === 1;
+		const addMember = () => {
+			const { email, name, role } = state.newMember;
+			const usedColourKeys = state.users.map((user) => user.colourKey);
+			state.users.push({ id: Date.now(), email, name, role, deactivatedAt: null, colourKey: (personalColours.find((c) => !usedColourKeys.includes(c.key)) ?? personalColours[0]).key });
+			state.accessReminderEmail = email;
+			state.newMember = { email: '', name: '', role: 'child' };
+		};
+		const moveChoreType = (index, direction) => {
+			const [moved] = state.choreTypes.splice(index, 1);
+			state.choreTypes.splice(index + direction, 0, moved);
+		};
+
+		const tabs = [
+			{ page: 'home', label: 'Accueil', icon: '⏱️' }, { page: 'history', label: 'Historique', icon: '📜' },
+			{ page: 'reports', label: 'Rapports', icon: '📊' }, { page: 'settings', label: 'Réglages', icon: '⚙️' }
+		];
+
+		return {
+			state, viewer, activeUsers, activeChoreTypes, profileOptions, pageColourStyle, performerOptions, defaultPerformerId,
+			homeDetailsSummary, pendingSummary, historyDayGroups, reportRange, reportStats, reportBuckets, reportComparisonLabel, sheetError,
+			currentTabLabel: computed(() => tabs.find((tab) => tab.page === state.page).label),
+			tabs, personalColours, durationChips: [15, 30, 45, 60, 90, 120, 180],
+			periodTabs: [{ period: 'day', label: 'Jour' }, { period: 'week', label: 'Semaine' }, { period: 'month', label: 'Mois' }, { period: 'year', label: 'Année' }],
+			userById, typeByKey, colourOf, canEditChore, isTilePending, pendingFillStyle, isLastActiveAdmin,
+			startPending, cancelPending, editPending, openEditSheet, saveSheet, deleteChoreFromSheet, addMember, moveChoreType, showToast,
+			formatDuration, formatTime, formatDayTime, clampDuration, todayIso
+		};
+	}
+}).mount('#app');
+</script>
+</body>
+</html>

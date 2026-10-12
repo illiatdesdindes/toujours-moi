@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TJM — thèmes</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.43/daisyui.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.8"></script>
+<script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+<style>
+	[v-cloak] { display: none; }
+	body { background: #e9e6e1; }
+
+	[data-theme='chaleureux'] {
+		color-scheme: light;
+		--color-base-100: #fffaf3; --color-base-200: #f6ecdf; --color-base-300: #ead9c4; --color-base-content: #3b2a20;
+		--color-neutral: #b4553a; --color-neutral-content: #fff6ef;
+		--color-secondary: #e9b872; --color-secondary-content: #3b2a20;
+		--color-accent: #7a9e7e; --color-accent-content: #10200f;
+		--color-info: #5b8dc9; --color-info-content: #fff; --color-success: #5c9a63; --color-success-content: #fff;
+		--color-warning: #e0a12b; --color-warning-content: #2b1d00; --color-error: #c8473b; --color-error-content: #fff;
+		--radius-selector: 1rem; --radius-field: 0.75rem; --radius-box: 1.25rem;
+		--size-selector: 0.25rem; --size-field: 0.25rem; --border: 1px; --depth: 1; --noise: 0;
+		font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+	}
+	[data-theme='frais'] {
+		color-scheme: light;
+		--color-base-100: #ffffff; --color-base-200: #f2f5f5; --color-base-300: #dde5e5; --color-base-content: #17302f;
+		--color-neutral: #0f5e5c; --color-neutral-content: #eafffd;
+		--color-secondary: #9dd9d2; --color-secondary-content: #0c2a28;
+		--color-accent: #f2a65a; --color-accent-content: #2a1600;
+		--color-info: #3a86c8; --color-info-content: #fff; --color-success: #2f9e6e; --color-success-content: #fff;
+		--color-warning: #e3a008; --color-warning-content: #231800; --color-error: #d64545; --color-error-content: #fff;
+		--radius-selector: 0.5rem; --radius-field: 0.5rem; --radius-box: 0.75rem;
+		--size-selector: 0.25rem; --size-field: 0.25rem; --border: 1px; --depth: 0; --noise: 0;
+		font-family: 'Inter', system-ui, sans-serif;
+	}
+	[data-theme='pop'] {
+		color-scheme: light;
+		--color-base-100: #fdfbf6; --color-base-200: #f3efe4; --color-base-300: #1d2440; --color-base-content: #1d2440;
+		--color-neutral: #1d2440; --color-neutral-content: #fdfbf6;
+		--color-secondary: #ffd23f; --color-secondary-content: #1d2440;
+		--color-accent: #ff6b6b; --color-accent-content: #1d2440;
+		--color-info: #4d96ff; --color-info-content: #1d2440; --color-success: #3ccf91; --color-success-content: #1d2440;
+		--color-warning: #ffb347; --color-warning-content: #1d2440; --color-error: #ff5c5c; --color-error-content: #1d2440;
+		--radius-selector: 0.5rem; --radius-field: 0.5rem; --radius-box: 0.75rem;
+		--size-selector: 0.25rem; --size-field: 0.25rem; --border: 2px; --depth: 0; --noise: 0;
+		font-family: 'Space Grotesk', system-ui, sans-serif;
+	}
+	[data-theme='pop'] .pop-edge { border: 2px solid var(--color-base-content); box-shadow: 3px 3px 0 var(--color-base-content); }
+	[data-theme='pop'] .btn { border: 2px solid var(--color-base-content); box-shadow: 2px 2px 0 var(--color-base-content); }
+	[data-theme='pop'] .btn:active { box-shadow: none; translate: 2px 2px; }
+
+	.phone { width: 375px; max-width: 100%; height: 760px; }
+	.pending-bar { transition: width linear; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Nunito:wght@400;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+<div id="app" v-cloak class="p-4 md:p-8">
+	<header class="mx-auto mb-6 max-w-6xl">
+		<h1 class="text-2xl font-bold">TJM · prototype 01 : thème</h1>
+		<p class="text-sm opacity-70">Les trois écrans d'accueil sont fonctionnels : durée, tap sur un type, carte en attente 5 s (Modifier / Annuler). Choisis une couleur perso sous chaque téléphone pour voir comment elle teinte l'app.</p>
+		<label class="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" class="toggle toggle-sm" v-model="iconOnly" /> Types en icône seule</label>
+	</header>
+
+	<div class="mx-auto flex max-w-6xl flex-wrap justify-center gap-8">
+		<section v-for="theme in themes" :key="theme.key" class="flex flex-col items-center gap-3">
+			<h2 class="font-semibold">{{ theme.label }}</h2>
+
+			<div :data-theme="theme.key" class="phone relative overflow-hidden rounded-[2.5rem] border-8 border-black bg-base-100 text-base-content shadow-2xl"
+				:style="primaryStyle(theme)">
+				<div class="flex h-full flex-col">
+					<!-- header -->
+					<div class="flex items-center justify-between bg-primary px-4 py-3 text-primary-content">
+						<span class="text-lg font-black tracking-tight">TJM</span>
+						<button class="btn btn-sm btn-ghost gap-2 text-primary-content">
+							<span class="size-3 rounded-full border border-current" :style="{ background: theme.colour.bg ?? 'var(--color-neutral)' }"></span>
+							Moi ▾
+						</button>
+					</div>
+
+					<div class="flex-1 overflow-y-auto px-4 pb-24 pt-4">
+						<!-- duration -->
+						<p class="text-sm font-semibold opacity-70">Combien de temps ?</p>
+						<div class="my-2 flex items-center justify-between">
+							<button class="btn btn-circle btn-lg" @click="theme.minutes = clampDuration(theme.minutes - 15)">−</button>
+							<span class="text-4xl font-black tabular-nums">{{ formatDuration(theme.minutes) }}</span>
+							<button class="btn btn-circle btn-lg" @click="theme.minutes = clampDuration(theme.minutes + 15)">+</button>
+						</div>
+						<div class="mb-4 flex gap-1 overflow-x-auto">
+							<button v-for="chip in durationChips" :key="chip" class="btn btn-xs"
+								:class="theme.minutes === chip ? 'btn-primary' : 'btn-outline'" @click="theme.minutes = chip">{{ formatDuration(chip) }}</button>
+						</div>
+
+						<!-- types -->
+						<p class="text-sm font-semibold opacity-70">Quoi ? <span class="font-normal">(un tap enregistre)</span></p>
+						<div class="mt-2 grid grid-cols-4 gap-2">
+							<button v-for="choreType in choreTypes" :key="choreType.key"
+								class="pop-edge flex flex-col items-center justify-center gap-1 rounded-box bg-base-200 p-2 transition active:scale-95"
+								:class="iconOnly ? 'aspect-square' : 'min-h-20'"
+								:title="choreType.full" :aria-label="choreType.full" @click="startPending(theme, choreType)">
+								<span class="text-2xl">{{ choreType.icon }}</span>
+								<span v-if="!iconOnly" class="text-center text-[0.68rem] leading-tight">{{ choreType.short }}</span>
+							</button>
+						</div>
+
+						<!-- derived line -->
+						<button class="mt-4 flex w-full items-center gap-2 rounded-field bg-base-200 px-3 py-2 text-left text-sm">
+							<span>▸</span><span>{{ derivedStartLabel(theme.minutes) }} · Moi</span>
+						</button>
+					</div>
+
+					<!-- pending card -->
+					<div v-if="theme.pending" class="pop-edge absolute inset-x-3 bottom-20 overflow-hidden rounded-box bg-primary text-primary-content shadow-xl">
+						<div class="flex items-center gap-3 p-3">
+							<span class="text-2xl">{{ theme.pending.choreType.icon }}</span>
+							<div class="flex-1 text-sm leading-tight">
+								<p class="font-bold">{{ theme.pending.choreType.short }} · {{ formatDuration(theme.pending.minutes) }}</p>
+								<p class="opacity-80">{{ theme.pending.startLabel }}</p>
+							</div>
+							<button class="btn btn-sm btn-ghost text-primary-content" @click="editPending(theme)">Modifier</button>
+							<button class="btn btn-sm" @click="cancelPending(theme)">Annuler</button>
+						</div>
+						<div class="h-1 bg-primary-content/30"><div class="pending-bar h-full bg-primary-content" :style="{ width: theme.pending.progress + '%', transitionDuration: theme.pending.progress ? '5000ms' : '0ms' }"></div></div>
+					</div>
+
+					<!-- toast -->
+					<div v-if="theme.toast" class="absolute inset-x-3 bottom-20 rounded-box bg-neutral p-3 text-sm text-neutral-content shadow-xl">{{ theme.toast }}</div>
+
+					<!-- dock -->
+					<nav class="dock absolute bottom-0 bg-base-200">
+						<button v-for="(tab, index) in tabs" :key="tab.label" :class="{ 'dock-active text-primary': index === 0 }">
+							<span class="text-xl">{{ tab.icon }}</span><span class="dock-label">{{ tab.label }}</span>
+						</button>
+					</nav>
+				</div>
+			</div>
+
+			<!-- personal colours -->
+			<div class="flex max-w-[375px] flex-wrap justify-center gap-2">
+				<button v-for="colour in personalColours" :key="colour.key" class="flex flex-col items-center text-[0.65rem]" @click="theme.colour = colour">
+					<span class="grid size-9 place-items-center rounded-full text-xs font-bold ring-offset-2"
+						:class="{ 'ring-2 ring-black': theme.colour.key === colour.key }"
+						:style="{ background: colour.bg, color: colour.fg }">Aa</span>
+					{{ colour.label }}<span :class="contrastRatio(colour) < 4.5 ? 'text-red-600' : 'opacity-60'">{{ contrastRatio(colour).toFixed(1) }}</span>
+				</button>
+			</div>
+		</section>
+	</div>
+</div>
+
+<script>
+const { createApp, reactive } = Vue;
+
+const choreTypes = [
+	['dishes', 'Vaisselle', 'Vaisselle', '🍽️'], ['cooking', 'Repas', 'Cuisine / repas', '🍳'],
+	['table', 'Table', 'Mettre / débarrasser la table', '🥄'], ['bathroom', 'Salle de bain', 'Salle de bain', '🛁'],
+	['toilets', 'WC', 'Toilettes', '🚽'], ['vacuuming', 'Aspirateur', 'Aspirateur / balai', '🧹'],
+	['mopping', 'Serpillière', 'Serpillière', '🪣'], ['laundry', 'Lessive', 'Lessive (lancer, étendre, plier)', '🧺'],
+	['ironing', 'Repassage', 'Repassage', '👕'], ['groceries', 'Courses', 'Courses', '🛒'],
+	['trash', 'Poubelles', 'Poubelles / tri', '🗑️'], ['tidying', 'Rangement', 'Rangement', '📦'],
+	['bed_linen', 'Lits', 'Lits / draps', '🛏️'], ['garden', 'Jardin', 'Jardin', '🌱'],
+	['pets', 'Animaux', 'Animaux', '🐾'], ['other', 'Autre', 'Autre', '✨']
+].map(([key, short, full, icon]) => ({ key, short, full, icon }));
+
+const personalColours = [
+	['neutral', 'Neutre', null, null], ['tomato', 'Tomate', '#c43a26', '#ffffff'], ['tangerine', 'Mandarine', '#f08a24', '#2a1300'],
+	['mustard', 'Moutarde', '#d9a404', '#241a00'], ['sage', 'Sauge', '#7fa878', '#10200f'],
+	['turquoise', 'Turquoise', '#1aa39a', '#00201e'], ['cornflower', 'Bleuet', '#4565d0', '#ffffff'],
+	['lavender', 'Lavande', '#a58bd8', '#1a1030'], ['raspberry', 'Framboise', '#c2185b', '#ffffff']
+].map(([key, label, bg, fg]) => ({ key, label, bg, fg }));
+
+const PENDING_DELAY_MS = 5000;
+const MAX_DURATION_MINUTES = 24 * 60;
+
+const formatDuration = (minutes) => {
+	const hours = Math.floor(minutes / 60), rest = minutes % 60;
+	if (!hours) return `${rest} min`;
+	return rest ? `${hours} h ${String(rest).padStart(2, '0')}` : `${hours} h`;
+};
+const clampDuration = (minutes) => Math.min(MAX_DURATION_MINUTES, Math.max(15, minutes));
+
+// Start = now − duration, rounded to the nearest quarter hour.
+const derivedStart = (minutes) => {
+	const quarterMs = 15 * 60 * 1000;
+	return new Date(Math.round((Date.now() - minutes * 60 * 1000) / quarterMs) * quarterMs);
+};
+const derivedStartLabel = (minutes) => {
+	const start = derivedStart(minutes);
+	const time = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+	const isToday = start.toDateString() === new Date().toDateString();
+	return `${isToday ? "Aujourd'hui" : start.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}, ${time}`;
+};
+
+const relativeLuminance = (hex) => {
+	const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+		.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrastRatio = (colour) => {
+	if (!colour.bg) return 21;
+	const [lighter, darker] = [relativeLuminance(colour.bg), relativeLuminance(colour.fg)].sort((a, b) => b - a);
+	return (lighter + 0.05) / (darker + 0.05);
+};
+
+createApp({
+	setup() {
+		const themes = ['chaleureux', 'frais', 'pop'].map((key) =>
+			reactive({ key, label: key[0].toUpperCase() + key.slice(1), minutes: 45, colour: personalColours[0], pending: null, toast: null })
+		);
+
+		const primaryStyle = (theme) => theme.colour.bg
+			? { '--color-primary': theme.colour.bg, '--color-primary-content': theme.colour.fg }
+			: { '--color-primary': 'var(--color-neutral)', '--color-primary-content': 'var(--color-neutral-content)' };
+
+		const showToast = (theme, text) => {
+			theme.toast = text;
+			setTimeout(() => (theme.toast = null), 2000);
+		};
+
+		const startPending = (theme, choreType) => {
+			if (theme.pending) clearTimeout(theme.pending.timer);
+			const pending = reactive({ choreType, minutes: theme.minutes, startLabel: derivedStartLabel(theme.minutes), progress: 0, timer: null });
+			theme.pending = pending;
+			requestAnimationFrame(() => requestAnimationFrame(() => (pending.progress = 100)));
+			pending.timer = setTimeout(() => {
+				theme.pending = null;
+				showToast(theme, `✓ ${choreType.short} · ${formatDuration(pending.minutes)} enregistré`);
+			}, PENDING_DELAY_MS);
+		};
+		const cancelPending = (theme) => {
+			clearTimeout(theme.pending.timer);
+			theme.pending = null;
+		};
+		const editPending = (theme) => {
+			clearTimeout(theme.pending.timer);
+			theme.pending = null;
+			showToast(theme, '(ici : la feuille de modification — prototype 02)');
+		};
+
+		return {
+			themes, choreTypes, personalColours, iconOnly: Vue.ref(false),
+			durationChips: [15, 30, 45, 60, 90, 120, 180],
+			tabs: [{ label: 'Accueil', icon: '⏱️' }, { label: 'Historique', icon: '📜' }, { label: 'Rapports', icon: '📊' }, { label: 'Réglages', icon: '⚙️' }],
+			formatDuration, clampDuration, derivedStartLabel, contrastRatio, primaryStyle, startPending, cancelPending, editPending
+		};
+	}
+}).mount('#app');
+</script>
+</body>
+</html>
