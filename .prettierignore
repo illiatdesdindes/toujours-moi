@@ -1,0 +1,13 @@
+# Package Managers
+package-lock.json
+
+# Miscellaneous
+/static/
+
+# Hand-written docs, design references and tool config
+docs/
+prototypes/
+design/
+.claude/
+AGENTS.md
+GLOSSARY.md

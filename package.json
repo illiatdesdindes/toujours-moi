@@ -1,0 +1,50 @@
+{
+	"name": "tjm",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"db:migrate:local": "cf d1 migrations apply 00000000-0000-4000-8000-000000000000 --mode development --local --persist-to .wrangler/state",
+		"build": "vite build",
+		"preview": "npm run build && wrangler dev --x-new-config --env development --port 4173",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "cf workers types --mode development && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test:unit": "vitest --project unit",
+		"test": "npm run build && vitest run",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write .",
+		"deploy": "npm run build && wrangler build --x-new-config --env production --experimental-cf-build-output && cf deploy --prebuilt --mode production"
+	},
+	"devDependencies": {
+		"@cloudflare/config": "0.20.0",
+		"@cloudflare/vitest-plugin": "^1.2.4",
+		"@eslint/js": "^10.0.1",
+		"@sveltejs/adapter-cloudflare": "^8.0.0",
+		"@sveltejs/kit": "^3.0.0",
+		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@tailwindcss/vite": "^4.3.0",
+		"@types/node": "^24",
+		"cf": "^1.0.0-beta.5",
+		"daisyui": "^5.7.44",
+		"eslint": "^10.4.1",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-svelte": "^3.19.0",
+		"globals": "^17.6.0",
+		"prettier": "^3.8.3",
+		"prettier-plugin-svelte": "^4.1.0",
+		"prettier-plugin-tailwindcss": "^0.8.0",
+		"svelte": "^5.57.1",
+		"svelte-check": "^4.7.5",
+		"tailwindcss": "^4.3.0",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.60.1",
+		"vite": "^8.0.16",
+		"vitest": "^4.1.8",
+		"wrangler": "^4.147.0"
+	},
+	"imports": {
+		"#lib/*": "./src/lib/*"
+	}
+}

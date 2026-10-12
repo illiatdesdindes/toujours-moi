@@ -1,0 +1,76 @@
+<script lang="ts">
+	import './layout.css';
+	import favicon from '#lib/assets/favicon.svg';
+	import logo from '#lib/assets/logo.svg';
+	import Icon, { type IconName } from '#lib/components/Icon.svelte';
+	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+
+	let { children } = $props();
+
+	const tabs = (
+		[
+			{ label: 'Accueil', icon: 'accueil', routeId: '/' },
+			{ label: 'Historique', icon: 'historique', routeId: '/historique' },
+			{ label: 'Rapports', icon: 'rapports', routeId: '/rapports' },
+			{ label: 'Réglages', icon: 'reglages', routeId: '/reglages' }
+		] as const satisfies { label: string; icon: IconName; routeId: string }[]
+	).map((tab) => ({ ...tab, href: resolve(tab.routeId) }));
+	// resolve() gives relative hrefs, so match on the route instead.
+	const currentTab = $derived(tabs.find((tab) => tab.routeId === page.route.id));
+</script>
+
+<svelte:head>
+	<link rel="icon" href={favicon} />
+	<title>{currentTab ? `${currentTab.label} · TJM` : 'TJM'}</title>
+</svelte:head>
+
+<div class="flex min-h-dvh bg-base-100 text-base-content">
+	<!-- Desktop: sidebar instead of the dock. -->
+	<nav
+		class="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 border-r-2 border-base-content bg-base-200 p-4 md:flex"
+	>
+		<a href={resolve('/')} class="mb-4 flex items-center gap-2 text-2xl font-black">
+			<img src={logo} alt="" class="size-9" />TJM
+		</a>
+		{#each tabs as tab (tab.href)}
+			<a
+				href={tab.href}
+				class={['btn justify-start', tab === currentTab ? 'btn-primary' : 'btn-ghost']}
+				aria-current={tab === currentTab ? 'page' : undefined}
+			>
+				<Icon name={tab.icon} />{tab.label}
+			</a>
+		{/each}
+	</nav>
+
+	<div class="flex min-w-0 flex-1 flex-col">
+		<header
+			class="flex items-center justify-between gap-2 border-b-2 border-base-content bg-primary px-4 py-3 text-primary-content"
+		>
+			<span class="flex items-center gap-2 text-lg font-black md:hidden">
+				<img src={logo} alt="" class="size-7" />TJM
+			</span>
+			<h1 class="sr-only text-lg font-bold md:not-sr-only">{currentTab?.label}</h1>
+		</header>
+
+		<!-- Room for the dock on mobile. -->
+		<main class="flex-1 px-4 pt-4 pb-28 md:px-8 md:pb-8">
+			<div class="mx-auto max-w-3xl">
+				{@render children()}
+			</div>
+		</main>
+	</div>
+
+	<nav class="dock border-t-2 border-base-content bg-base-200 md:hidden">
+		{#each tabs as tab (tab.href)}
+			<a
+				href={tab.href}
+				class={{ 'dock-active text-primary': tab === currentTab }}
+				aria-current={tab === currentTab ? 'page' : undefined}
+			>
+				<Icon name={tab.icon} class="size-6" /><span class="dock-label">{tab.label}</span>
+			</a>
+		{/each}
+	</nav>
+</div>
