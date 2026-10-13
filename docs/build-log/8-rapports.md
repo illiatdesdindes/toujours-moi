@@ -15,15 +15,25 @@
 - **Calendar maths on Paris dates, instants only at the boundaries**: periods and buckets are built on `YYYY-MM-DD` strings with `Date.UTC`, and each boundary becomes Paris midnight via the existing `fromParisDateAndTime`. Midnight never falls in a DST gap in Paris, so days are 23 or 25 h naturally. No new time code beyond that.
 - **Buckets are aggregated in SQL by joining a `json_each(?)` of `[start, end]` pairs**: one bound parameter for up to 31 buckets (D1 caps bound parameters at 100; a VALUES list would need 93). Options: one query per bucket (31 round trips in a batch) or bucketing in SQL by Paris day (DST maths in SQLite). All four queries go in one `db.batch`.
 - **Percent is rounded per row in TS** from the SQL sums, as the prototype; rows may add up to 99–101 %.
-- **The comparison copy is the prototype's** ("vs la semaine précédente", "la veille", "le mois précédent", "l'année précédente"); the spec's "vs semaine dernière" is an example, and it reads wrong on a past week. Zero shows "=", as the prototype.
+- **Zero change shows "="**, as the prototype.
 - **The week label drops the first month when both ends share it** ("semaine du 5 au 11 oct.", the spec's example), else names both ("semaine du 28 sept. au 4 oct."). No year in week/day labels; Mois and Année show it.
-- **The profile switcher keeps the page's other query params** (`thisPageWithProfile` in `+layout.svelte`), so switching to Famille on Rapports stays on the same period. The dock/sidebar tabs still carry only `?profil=`.
+- **The profile switcher keeps the page's other query params** (`profilePageHref` with `page.url.searchParams`, in `+layout.svelte`), so switching to Famille on Rapports stays on the same period. The dock/sidebar tabs still carry only `?profil=`.
 - **`ReportStats` lives in `domain.ts`** so the client component can type its props without importing a `server/` module.
 - **Deactivated people and archived types still count** (joins without active filters), as Historique (spec Q2, Q10); deleted chores never do.
-- **Two components, not more**: `ReportShareBar` (per type and per person rows) and `ReportOverTimeBars`. The tabs, navigation and headline appear once, so they stay in the page.
+- **Components** (review): `ReportShareBar` (per type and per person rows), `ReportOverTimeBars`, `ReportCard` (the titled box with its "Rien sur cette période.") and `ReportPeriodNav` (‹ label › Aujourd'hui). The period tabs and the headline appear once and are not domain-reusable, so they stay in the page.
 - **No migration**: the `(started_at)` and `(performer_user_id, started_at)` indexes from 0002 serve every query.
 - **"Par personne" shows for Famille even on an empty period**, with "Rien sur cette période.", like "Par type".
 
+- **One way to build a profile page's link** (review): `src/lib/profile-page-href.ts` `profilePageHref(routeId, profileParam, pageParams)` replaces the layout's string-built `tabHref` query, its `thisPageWithProfile(tab, …)`, and Rapports' `reportHref` body. Options: keep three builders, or put a helper in `+layout.svelte` (pages can't import from it). A `$lib` module both use is the smallest shared place. `profil` goes last in the query, so Rapports' links read `?periode=…&date=…&profil=…`.
+- **Each period kind's rules live in one map** (review): `REPORT_PERIOD_RULES` in `report-periods.ts` holds, per kind, the `?periode=` value, tab label, previous label, period length, first-date rule, label and sub-period rules; `REPORT_PERIOD_TABS` is derived from it. Replaces three `kind ===` cascades and three side Records.
+- **Names** (review): `ReportStats.buckets` → `bucketTotals` (the minutes; `ReportPeriod.buckets` stays the boundaries, typed `ReportBucket`), and `ReportOverTimeBars`' `bucketStats`/`bucket` → `bucketTotals`/`bucketTotal`; `toDate` → `formatIsoDate`; `STEP` → each rule's `periodLength`; `from` → `firstDayText`; `total` → `periodTotals`.
+- **The switcher's hrefs are tested on the server render** (review): `test/profile-switcher.test.ts` checks that on `/rapports?periode=mois&date=…` the Famille and "yourself" options keep the period, and the tabs carry only `?profil=`.
+
 ## Deviations from spec
 
+- **The headline's comparison copy is the prototype's, not the spec's**: Q9 says "+1 h 15 vs semaine dernière"; the page says "vs la semaine précédente" / "la veille" / "le mois précédent" / "l'année précédente". "Semaine dernière" reads wrong on a past week (two weeks ago, compared with three weeks ago); the prototype already uses the relative wording.
+
 ## Skipped review/QA findings
+
+- **"Par personne" shows an empty-state line the prototype lacks** (review, a note): kept. An empty Famille period with a bare "Par personne" title reads as broken; the line matches "Par type". Recorded under Decisions already.
+- **The profile switcher keeps every other query param, not only `?profil=`** (review, a note): kept. Only Rapports has page params today, and dropping its period when switching to Famille would lose the user's place; Q8 asks to keep `?profil=` across pages, which still holds. Recorded under Decisions already.

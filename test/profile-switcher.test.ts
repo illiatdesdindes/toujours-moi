@@ -64,6 +64,19 @@ describe('profile switcher (spec Q8)', () => {
 		expect(await page.text()).toContain(`historique?profil=${CHILD_ID}`);
 	});
 
+	it("points the switcher at the page on screen, keeping its other params (Rapports' period)", async () => {
+		const html = await (
+			await fetchPage(
+				`/rapports?periode=mois&date=2026-09-01&profil=${CHILD_ID}`,
+				await accessHeaders('papa@exemple.fr')
+			)
+		).text();
+		expect(html).toContain('rapports?periode=mois&amp;date=2026-09-01&amp;profil=famille"');
+		expect(html).toContain('rapports?periode=mois&amp;date=2026-09-01"'); // yourself: no ?profil=
+		// The dock and sidebar tabs carry only ?profil=.
+		expect(html).toContain(`historique?profil=${CHILD_ID}"`);
+	});
+
 	it("wears the selected person's colour and offers the switcher to grown-ups only", async () => {
 		const asMaman = await fetchPage(
 			`/?profil=${CHILD_ID}`,

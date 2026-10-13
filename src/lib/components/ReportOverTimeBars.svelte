@@ -6,32 +6,35 @@
 
 	let {
 		periodBuckets,
-		bucketStats,
+		bucketTotals,
 		stackedByPerson
 	}: {
+		/** Each bar's boundaries and labels. */
 		periodBuckets: ReportBucket[];
-		/** Same order as `periodBuckets`. */
-		bucketStats: ReportStats['buckets'];
+		/** Each bar's minutes, same order as `periodBuckets`. */
+		bucketTotals: ReportStats['bucketTotals'];
 		stackedByPerson: boolean;
 	} = $props();
 
-	const longestMinutes = $derived(Math.max(1, ...bucketStats.map((bucket) => bucket.totalMinutes)));
+	const longestMinutes = $derived(
+		Math.max(1, ...bucketTotals.map((bucketTotal) => bucketTotal.totalMinutes))
+	);
 </script>
 
 <ul class="flex h-32 items-end gap-0.5">
 	{#each periodBuckets as periodBucket, index (periodBucket.start)}
-		{@const bucket = bucketStats[index]!}
+		{@const bucketTotal = bucketTotals[index]!}
 		<li
 			class="flex h-full flex-1 flex-col justify-end"
-			title="{periodBucket.title} · {formatDuration(bucket.totalMinutes)}"
+			title="{periodBucket.title} · {formatDuration(bucketTotal.totalMinutes)}"
 		>
-			<span class="sr-only">{periodBucket.title} : {formatDuration(bucket.totalMinutes)}</span>
+			<span class="sr-only">{periodBucket.title} : {formatDuration(bucketTotal.totalMinutes)}</span>
 			<div
 				class="flex w-full flex-col-reverse overflow-hidden rounded-t"
-				style:height="{(bucket.totalMinutes / longestMinutes) * 100}%"
+				style:height="{(bucketTotal.totalMinutes / longestMinutes) * 100}%"
 				aria-hidden="true"
 			>
-				{#each bucket.segments as segment (segment.userId)}
+				{#each bucketTotal.segments as segment (segment.userId)}
 					<div
 						style:flex-grow={segment.minutes}
 						style:background={stackedByPerson

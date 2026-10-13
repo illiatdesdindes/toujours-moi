@@ -66,12 +66,12 @@ export const loadReportStats = async (
 				JSON.stringify(period.buckets.map((bucket) => [bucket.start, bucket.end]))
 			)
 	]);
-	const total = totals!.results[0] as {
+	const periodTotals = totals!.results[0] as {
 		total_minutes: number;
 		chore_count: number;
 		previous_total_minutes: number;
 	};
-	const buckets: ReportStats['buckets'] = period.buckets.map(() => ({
+	const bucketTotals: ReportStats['bucketTotals'] = period.buckets.map(() => ({
 		totalMinutes: 0,
 		segments: []
 	}));
@@ -81,18 +81,18 @@ export const loadReportStats = async (
 		colour_key: ColourKey;
 		minutes: number;
 	}[]) {
-		const bucket = buckets[row.bucket_index]!;
-		bucket.totalMinutes += row.minutes;
-		bucket.segments.push({
+		const bucketTotal = bucketTotals[row.bucket_index]!;
+		bucketTotal.totalMinutes += row.minutes;
+		bucketTotal.segments.push({
 			userId: row.performer_user_id,
 			colourKey: row.colour_key,
 			minutes: row.minutes
 		});
 	}
 	return {
-		totalMinutes: total.total_minutes,
-		choreCount: total.chore_count,
-		previousTotalMinutes: total.previous_total_minutes,
+		totalMinutes: periodTotals.total_minutes,
+		choreCount: periodTotals.chore_count,
+		previousTotalMinutes: periodTotals.previous_total_minutes,
 		byType: (
 			byType!.results as {
 				chore_type_id: string;
@@ -109,7 +109,7 @@ export const loadReportStats = async (
 			fullLabel: row.full_label,
 			minutes: row.minutes,
 			count: row.chore_count,
-			percent: percentOf(row.minutes, total.total_minutes)
+			percent: percentOf(row.minutes, periodTotals.total_minutes)
 		})),
 		byPerson: (
 			byPerson!.results as {
@@ -125,8 +125,8 @@ export const loadReportStats = async (
 			colourKey: row.colour_key,
 			minutes: row.minutes,
 			count: row.chore_count,
-			percent: percentOf(row.minutes, total.total_minutes)
+			percent: percentOf(row.minutes, periodTotals.total_minutes)
 		})),
-		buckets
+		bucketTotals
 	};
 };

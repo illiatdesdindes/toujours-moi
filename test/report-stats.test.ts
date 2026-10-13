@@ -95,8 +95,10 @@ describe('loadReportStats', () => {
 				percent: 40
 			})
 		]);
-		expect(stats.buckets.map((bucket) => bucket.totalMinutes)).toEqual([45, 0, 0, 0, 0, 0, 30]);
-		expect(stats.buckets[0]!.segments).toEqual([
+		expect(stats.bucketTotals.map((bucket) => bucket.totalMinutes)).toEqual([
+			45, 0, 0, 0, 0, 0, 30
+		]);
+		expect(stats.bucketTotals[0]!.segments).toEqual([
 			{ userId: CHILD_ID, colourKey: 'turquoise', minutes: 45 }
 		]);
 	});
@@ -115,7 +117,7 @@ describe('loadReportStats', () => {
 				percent: 44
 			}
 		]);
-		expect(stats.buckets[2]!.segments).toEqual([
+		expect(stats.bucketTotals[2]!.segments).toEqual([
 			{ userId: SECOND_CHILD_ID, colourKey: 'mustard', minutes: 60 }
 		]);
 	});
@@ -132,7 +134,7 @@ describe('loadReportStats', () => {
 			previousTotalMinutes: 0,
 			byType: [],
 			byPerson: [],
-			buckets: []
+			bucketTotals: []
 		});
 	});
 
@@ -143,7 +145,7 @@ describe('loadReportStats', () => {
 			reportPeriodFor('year', '2026-10-05', NOW)
 		);
 		expect(stats.totalMinutes).toBe(45 + 30 + 120 + 60 + 90 + 15);
-		expect(stats.buckets.map((bucket) => bucket.totalMinutes)).toEqual([
+		expect(stats.bucketTotals.map((bucket) => bucket.totalMinutes)).toEqual([
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 360, 0, 0
 		]);
 	});

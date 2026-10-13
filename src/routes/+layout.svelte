@@ -5,6 +5,7 @@
 	import Icon, { type IconGlyph } from '#lib/components/Icon.svelte';
 	import ProfileSwitcher from '#lib/components/ProfileSwitcher.svelte';
 	import { PERSONAL_COLOURS } from '#lib/domain.js';
+	import { profilePageHref } from '#lib/profile-page-href.js';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { setChoreOutbox, setShowToast } from '#lib/app-context.js';
@@ -74,17 +75,7 @@
 	// Taken from the load, not the URL: a 403/404 page has none, so its tabs lead back out.
 	const selectedProfileParam = $derived(page.data.selectedProfileParam ?? null);
 	const tabHref = (tab: Tab, tabProfileParam: string | null) =>
-		tab.showsProfile && tabProfileParam
-			? resolve(`${tab.routeId}?profil=${encodeURIComponent(tabProfileParam)}`)
-			: tab.href;
-	/** The page on screen with another `?profil=`, keeping its other params (Rapports' `?periode=&date=`). */
-	const thisPageWithProfile = (tab: Tab, optionProfileParam: string | null) => {
-		const query = new URLSearchParams([
-			...[...page.url.searchParams].filter(([param]) => param !== 'profil'),
-			...(optionProfileParam ? [['profil', optionProfileParam]] : [])
-		]);
-		return query.size ? resolve(`${tab.routeId}?${query}`) : tab.href;
-	};
+		tab.showsProfile ? profilePageHref(tab.routeId, tabProfileParam) : tab.href;
 	// Only set on the profile pages, by their loads; null on the rest (Réglages, errors).
 	const selectedProfile = $derived(page.data.selectedProfile);
 	// The page wears the selected person's colour (spec Q8, Q10), the viewer's off the profile pages; Famille stays neutral.
@@ -136,11 +127,14 @@
 				<img src={logo} alt="" class="size-7" />TJM
 			</span>
 			<h1 class="sr-only text-lg font-bold md:not-sr-only">{pageTitle}</h1>
-			{#if currentTab && page.data.profileOptions && page.data.profileOptions.length > 1}
+			{#if currentTab?.showsProfile && page.data.profileOptions && page.data.profileOptions.length > 1}
+				{@const profilePageRouteId = currentTab.routeId}
+				<!-- The page on screen with another profile, keeping its other params (Rapports' period). -->
 				<ProfileSwitcher
 					profileOptions={page.data.profileOptions}
 					{selectedProfileParam}
-					hrefFor={(optionProfileParam) => thisPageWithProfile(currentTab, optionProfileParam)}
+					hrefFor={(optionProfileParam) =>
+						profilePageHref(profilePageRouteId, optionProfileParam, page.url.searchParams)}
 				/>
 			{:else}
 				<span class="font-semibold">{data.viewer.name}</span>

@@ -109,8 +109,8 @@ export type ReportStats = {
 		count: number;
 		percent: number;
 	}[];
-	/** One per `period.buckets`, in order: each person's minutes in that sub-period. */
-	buckets: {
+	/** One per `period.buckets` (the sub-period boundaries), in order: each sub-period's minutes, split per person. */
+	bucketTotals: {
 		totalMinutes: number;
 		segments: { userId: string; colourKey: ColourKey; minutes: number }[];
 	}[];
