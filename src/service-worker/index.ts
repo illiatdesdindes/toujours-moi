@@ -1,9 +1,10 @@
-// The app's service worker (spec Q12), built and registered by SvelteKit: the app shell, and the last
-// copy of each page so the home opens offline (its chore outbox, spec Q20 point 1). Push is #10's.
-// Copied from notakid; caching after https://svelte.dev/docs/kit/service-workers.
+// The app's service worker (spec Q12), built and registered by SvelteKit: the app shell, the last
+// copy of each page so the home opens offline (its chore outbox, spec Q20 point 1), and the Web Push
+// notifications (spec Q11). Copied from notakid; caching after https://svelte.dev/docs/kit/service-workers.
 import { self } from '$app/service-worker';
 import { version } from '$app/env';
 import { immutable, assets } from '$app/manifest';
+import type { PushNotificationPayload } from '#lib/domain.js';
 
 /** App shell: the built JS/CSS and static/ (not .assetsignore, never served), one cache per deploy. */
 const SHELL_CACHE_NAME = `shell-${version}`;
@@ -62,6 +63,37 @@ self.addEventListener('fetch', (event) => {
 				if (cached) return cached;
 				throw error;
 			}
+		})()
+	);
+});
+
+self.addEventListener('push', (event) => {
+	const notification = event.data?.json() as PushNotificationPayload | undefined;
+	if (!notification) return;
+	event.waitUntil(
+		self.registration.showNotification(notification.title, {
+			body: notification.body,
+			tag: notification.tag,
+			// A repush with the same tag (same performer) buzzes again instead of updating silently.
+			renotify: true,
+			data: notification,
+			icon: '/icon-192.png',
+			// Android's status bar: the monochrome broom (design/logo/tjm-notification-badge.svg).
+			badge: '/icon-badge-96.png'
+		} as NotificationOptions)
+	);
+});
+
+// Opens Historique on the performer's profile, in the app's window if one is open.
+self.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	const { url } = event.notification.data as PushNotificationPayload;
+	event.waitUntil(
+		(async () => {
+			const [client] = await self.clients.matchAll({ type: 'window' });
+			if (!client) return void (await self.clients.openWindow(url));
+			await client.focus();
+			await client.navigate(url);
 		})()
 	);
 });

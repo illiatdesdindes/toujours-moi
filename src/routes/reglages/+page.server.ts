@@ -44,7 +44,9 @@ export const load: PageServerLoad = async ({ locals: { viewer } }) => {
 					})
 				}))
 			: null,
-		choreTypeCatalog: canManageChoreTypes(viewer) ? await listChoreTypeCatalog(env.DB) : null
+		choreTypeCatalog: canManageChoreTypes(viewer) ? await listChoreTypeCatalog(env.DB) : null,
+		// Mon profil's notifications toggle subscribes this device with it (not a secret).
+		vapidPublicKey: env.VAPID_PUBLIC_KEY
 	};
 };
 

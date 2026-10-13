@@ -126,3 +126,6 @@ export type ReportStats = {
 		segments: { userId: string; colourKey: ColourKey; minutes: number }[];
 	}[];
 };
+
+/** What one Web Push carries (spec Q11); the service worker shows it as-is. `tag`: replaces an earlier push with the same tag. */
+export type PushNotificationPayload = { title: string; body: string; tag: string; url: string };

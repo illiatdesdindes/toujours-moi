@@ -33,6 +33,10 @@ export default defineConfig(({ mode }) => {
 						? bindings.d1({ name: 'tjm-production', id: productionDatabaseId() })
 						: bindings.d1({ name: 'tjm-local', id: '00000000-0000-4000-8000-000000000000' }),
 				ASSETS: bindings.assets(),
+				// Web Push VAPID key pair, base64url: raw P-256 public key and private `d` (spec Q20 point 3).
+				// Local: `.dev.vars`; tests: vite.config.ts; production: secrets set by #12.
+				VAPID_PUBLIC_KEY: bindings.secret(),
+				VAPID_PRIVATE_KEY: bindings.secret(),
 				// Per Viewer, per Cloudflare location, approximate: stops a looping client, not a precise quota.
 				// Namespace 1002: notakid (same account) has 1001, and a shared namespace would share the counter.
 				VIEWER_RATE_LIMIT: bindings.rateLimit({

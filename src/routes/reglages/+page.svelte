@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { getShowToast } from '#lib/app-context.js';
 	import ChoreTypeFields from '#lib/components/ChoreTypeFields.svelte';
+	import DeviceNotificationsToggle from '#lib/components/DeviceNotificationsToggle.svelte';
 	import PersonColourDot from '#lib/components/PersonColourDot.svelte';
 	import PersonalColourPicker from '#lib/components/PersonalColourPicker.svelte';
 	import PersonNameInput from '#lib/components/PersonNameInput.svelte';
@@ -88,6 +89,10 @@
 			</div>
 			<button class="btn btn-primary btn-sm">Enregistrer</button>
 		</form>
+		<!-- Per device, saved on tap: outside the form, as Enregistrer doesn't save it. -->
+		<div class="border-t-2 border-base-content/15 pt-3">
+			<DeviceNotificationsToggle vapidPublicKey={data.vapidPublicKey} />
+		</div>
 	</section>
 
 	{#if data.children}

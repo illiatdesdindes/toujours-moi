@@ -13,9 +13,10 @@ export const papaAdmin = {
 	colour_key: 'cornflower'
 };
 
-/** Empties `users`, their chores and every version. Chore types stay: the migration seeds them. */
+/** Empties `users`, their chores, devices and every version. Chore types stay: the migration seeds them. */
 export const resetFamily = () =>
 	env.DB.batch([
+		env.DB.prepare('DELETE FROM push_subscriptions'),
 		env.DB.prepare('DELETE FROM record_versions'),
 		env.DB.prepare('DELETE FROM chores'),
 		env.DB.prepare('DELETE FROM users')

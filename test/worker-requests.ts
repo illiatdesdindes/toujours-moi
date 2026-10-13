@@ -7,11 +7,20 @@ import { createAccessSigner } from '../src/lib/server/access-jwt.fixtures';
 
 const signer = await createAccessSigner();
 
-/** Serves Access's certs endpoint to the Worker; undo with `vi.unstubAllGlobals()`. */
-export const stubAccessCerts = () =>
+/**
+ * Serves Access's certs endpoint to the Worker, and any other URL with `fetchOtherUrl` (a fake push
+ * service); undo with `vi.unstubAllGlobals()`.
+ */
+export const stubAccessCerts = (
+	fetchOtherUrl?: (url: string, init?: RequestInit) => Promise<Response>
+) =>
 	vi.stubGlobal(
 		'fetch',
-		vi.fn(async () => signer.certs())
+		vi.fn(async (url: string | URL | Request, init?: RequestInit) =>
+			fetchOtherUrl && !String(url).startsWith(env.ACCESS_TEAM_DOMAIN)
+				? fetchOtherUrl(String(url), init)
+				: signer.certs()
+		)
 	);
 
 /** A `Cf-Access-Jwt-Assertion` header for `email`, as Access would send it to this Worker. */
@@ -34,10 +43,19 @@ export const fetchPage = async (path: string, headers: HeadersInit = {}) => {
 };
 
 /** A JSON POST to the built Worker, as the page's own fetch would send it. */
-export const postJson = async (path: string, body: unknown, headers: HeadersInit = {}) => {
+export const postJson = (path: string, body: unknown, headers: HeadersInit = {}) =>
+	sendJson('POST', path, body, headers);
+
+/** A JSON request to the built Worker; waits for its `waitUntil` work (the notifications) too. */
+export const sendJson = async (
+	method: 'POST' | 'DELETE',
+	path: string,
+	body: unknown,
+	headers: HeadersInit = {}
+) => {
 	const ctx = createExecutionContext();
 	const request = new Request(`http://example.com${path}`, {
-		method: 'POST',
+		method,
 		headers: { 'Content-Type': 'application/json', Origin: 'http://example.com', ...headers },
 		body: JSON.stringify(body)
 	});

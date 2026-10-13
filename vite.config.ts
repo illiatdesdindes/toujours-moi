@@ -59,7 +59,13 @@ export default defineConfig({
 						main: './.svelte-kit/cloudflare/_worker.js',
 						experimental: { newConfig: { configPath: './cloudflare.config.ts' } },
 						miniflare: {
-							bindings: { TEST_MIGRATIONS: await readD1Migrations('./migrations') }
+							bindings: {
+								TEST_MIGRATIONS: await readD1Migrations('./migrations'),
+								// Test-only VAPID key pair (notakid's).
+								VAPID_PUBLIC_KEY:
+									'BNeOCsvzD9HMwZnzqX9ZL-sVV4ElYUIAytifJd_YjNJcZMuBvZ8OJ5mC5uiG4hS719BhUW1C3AR-L_RvfyAiHSk',
+								VAPID_PRIVATE_KEY: 'zkg35ZUVRU523cAGitJVT-F1Nwcvo5WnkUcwbEdOg78'
+							}
 						}
 					})
 				],
