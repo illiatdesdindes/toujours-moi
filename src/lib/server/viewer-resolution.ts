@@ -1,8 +1,8 @@
 // The one place that knows Viewers come from Cloudflare Access (spec Q1, Q20 point 4; copied from
 // notakid's viewer-resolution.ts): Access JWT → email → active `users` row.
-import type { ColourKey, UserRole, Viewer } from '../domain';
 import { uuidV7 } from '../uuid';
 import { saveWithVersion } from './record-versions';
+import { findActiveUserByEmail } from './users';
 
 type ViewerEnv = { ACCESS_TEAM_DOMAIN: string; ACCESS_AUD: string; DEV_VIEWER_EMAIL?: string };
 
@@ -29,7 +29,7 @@ export const resolveViewerEmail = async (
  * the Access policy starts out listing only the admin's email.
  */
 export const findOrBootstrapViewer = async (db: D1Database, email: string) => {
-	const viewer = await findActiveViewer(db, email);
+	const viewer = await findActiveUserByEmail(db, email);
 	if (viewer) return viewer;
 	const anyUser = await db.prepare('SELECT 1 FROM users LIMIT 1').first();
 	if (anyUser) return null;
@@ -42,15 +42,7 @@ export const findOrBootstrapViewer = async (db: D1Database, email: string) => {
 		{ email, name: email.split('@')[0]!, role: 'admin', colour_key: 'tomato' },
 		adminId
 	);
-	return findActiveViewer(db, email);
-};
-
-const findActiveViewer = async (db: D1Database, email: string): Promise<Viewer | null> => {
-	const row = await db
-		.prepare('SELECT id, role, name, colour_key FROM users WHERE email = ? AND deleted_at IS NULL')
-		.bind(email)
-		.first<{ id: string; role: UserRole; name: string; colour_key: ColourKey }>();
-	return row && { id: row.id, role: row.role, name: row.name, colourKey: row.colour_key };
+	return findActiveUserByEmail(db, email);
 };
 
 type AccessClaims = {

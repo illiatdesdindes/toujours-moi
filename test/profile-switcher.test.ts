@@ -50,6 +50,20 @@ describe('profile switcher (spec Q8)', () => {
 		expect(await statusesFor('papa@exemple.fr', 'nobody')).toEqual([404, 404, 404]);
 	});
 
+	it('lets the tabs of a refused profile lead back out, not to the same 403', async () => {
+		const refused = await fetchPage(
+			`/?profil=${ADMIN_ID}`,
+			await accessHeaders('maman@exemple.fr')
+		);
+		expect(refused.status).toBe(403);
+		expect(await refused.text()).not.toContain(`profil=${ADMIN_ID}`);
+	});
+
+	it('keeps an allowed ?profil= on the tabs', async () => {
+		const page = await fetchPage(`/?profil=${CHILD_ID}`, await accessHeaders('maman@exemple.fr'));
+		expect(await page.text()).toContain(`historique?profil=${CHILD_ID}`);
+	});
+
 	it("wears the selected person's colour and offers the switcher to grown-ups only", async () => {
 		const asMaman = await fetchPage(
 			`/?profil=${CHILD_ID}`,

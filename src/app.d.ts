@@ -11,6 +11,8 @@ declare global {
 		interface PageData {
 			/** Set by the profile pages (Accueil, Historique, Rapports; spec Q8) for the header. */
 			selectedProfile?: SelectedProfile;
+			/** Its `?profil=` value (null = the viewer), what the tab links carry. */
+			selectedProfileParam?: string | null;
 			profileOptions?: ProfileOption[];
 		}
 		// interface PageState {}

@@ -1,13 +1,12 @@
 <!-- The edit sheet (spec Q4, Q6): a bottom sheet on mobile, a centred modal on desktop, saved with an explicit "Enregistrer". The home's Modifier opens it on the pending chore; #7 adds editing a saved one. -->
 <script lang="ts">
 	import { endsInTheFuture, NO_FUTURE_CHORE_MESSAGE } from '#lib/chore-timing.js';
-	import type { ChoreTypeOption, FamilyMember, NewChore } from '#lib/domain.js';
+	import type { ChoreTypeOption, NewChore, User } from '#lib/domain.js';
 	import { fromParisDateAndTime, toParisDateAndTime } from '#lib/paris-time.js';
 	import ChoreTypePicker from './ChoreTypePicker.svelte';
-	import ChoreWhenAndNoteFields from './ChoreWhenAndNoteFields.svelte';
+	import ChoreDetailsFields from './ChoreDetailsFields.svelte';
 	import DurationStepper from './DurationStepper.svelte';
 	import Icon from './Icon.svelte';
-	import PerformerField from './PerformerField.svelte';
 
 	let {
 		chore,
@@ -20,7 +19,7 @@
 		chore: NewChore;
 		choreTypes: ChoreTypeOption[];
 		/** "Fait par" (spec Q3): shown when there is a choice. */
-		performerOptions: FamilyMember[];
+		performerOptions: User[];
 		onSave: (chore: NewChore) => void;
 		/** Closed without saving (✕, Échap, the backdrop). */
 		onClose: () => void;
@@ -98,17 +97,15 @@
 				selectedChoreTypeId={draft.choreTypeId}
 				onPick={(choreType) => (draft.choreTypeId = choreType.id)}
 			/>
-			<ChoreWhenAndNoteFields
+			<ChoreDetailsFields
 				bind:date={draft.date}
 				bind:time={draft.time}
 				bind:note={draft.note}
+				bind:performerUserId={draft.performerUserId}
+				{performerOptions}
 				latestDate={today}
 				required
-			>
-				{#if performerOptions.length > 1}
-					<PerformerField bind:performerUserId={draft.performerUserId} {performerOptions} />
-				{/if}
-			</ChoreWhenAndNoteFields>
+			/>
 			{#if draftError}<p class="text-sm font-semibold text-error" role="alert">{draftError}</p>{/if}
 			<button class="btn w-full btn-primary" disabled={!!draftError}>Enregistrer</button>
 		</form>

@@ -9,10 +9,9 @@
 	} from '#lib/chore-timing.js';
 	import ChoreEditSheet from '#lib/components/ChoreEditSheet.svelte';
 	import ChoreTypePicker from '#lib/components/ChoreTypePicker.svelte';
-	import ChoreWhenAndNoteFields from '#lib/components/ChoreWhenAndNoteFields.svelte';
+	import ChoreDetailsFields from '#lib/components/ChoreDetailsFields.svelte';
 	import DurationStepper from '#lib/components/DurationStepper.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import PerformerField from '#lib/components/PerformerField.svelte';
 	import PendingChoreCard from '#lib/components/PendingChoreCard.svelte';
 	import type { ChoreTypeOption, NewChore } from '#lib/domain.js';
 	import {
@@ -47,6 +46,13 @@
 	const performerUserId = $derived(
 		quickLogOverrides.performerUserId || data.defaultPerformerUserId
 	);
+	// The page component survives a profile switch: an explicit "Fait par" pick must not, or the page
+	// wears Léa's colour while the tap logs for Noé (spec Q8's wrong-attribution risk).
+	const selectedProfileParam = $derived(data.selectedProfileParam);
+	$effect(() => {
+		void selectedProfileParam;
+		quickLogOverrides.performerUserId = '';
+	});
 
 	const startedAtFor = (tappedAt: Date) => {
 		const derived = deriveStartedAt(tappedAt, durationMinutes);
@@ -151,20 +157,15 @@
 				<span>{quickLogOverridesSummary}</span>
 			</summary>
 			<div class="space-y-2 border-t-2 border-base-content p-3">
-				<ChoreWhenAndNoteFields
+				<ChoreDetailsFields
 					bind:date={quickLogOverrides.date}
 					bind:time={quickLogOverrides.time}
 					bind:note={quickLogOverrides.note}
+					bind:performerUserId={quickLogOverrides.performerUserId}
+					performerOptions={data.performerOptions}
+					defaultPerformerName={performerById(data.defaultPerformerUserId)?.name ?? ''}
 					latestDate={today}
-				>
-					{#if data.performerOptions.length > 1}
-						<PerformerField
-							bind:performerUserId={quickLogOverrides.performerUserId}
-							performerOptions={data.performerOptions}
-							defaultPerformerName={performerById(data.defaultPerformerUserId)?.name ?? ''}
-						/>
-					{/if}
-				</ChoreWhenAndNoteFields>
+				/>
 				<p class="text-xs opacity-70">Laisse date et début vides pour « maintenant − durée ».</p>
 			</div>
 		</details>

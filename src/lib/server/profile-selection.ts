@@ -1,83 +1,74 @@
 // The profile switcher (spec Q8): which profiles a viewer may pick, the one `?profil=` selects, and
-// the home's default performer. Every rule comes from the access policy.
+// the `?profil=` value of a profile. Every rule comes from the access policy.
 import { error } from '@sveltejs/kit';
 import {
 	FAMILY_PROFILE_PARAM,
-	type ColourKey,
-	type FamilyMember,
 	type ProfileOption,
 	type SelectedProfile,
-	type UserRole,
+	type User,
 	type Viewer
 } from '../domain';
-import { canLogFor, canViewFamilyProfile, canViewProfile } from './access-policy';
+import { canViewFamilyProfile, canViewProfile } from './access-policy';
+import { listActiveUsers } from './users';
+
+/** The `?profil=` value that selects this profile (the inverse of `selectProfile`); null = the viewer. */
+export const profileParamFor = (viewer: Viewer, profile: SelectedProfile) =>
+	profile.kind === 'family'
+		? FAMILY_PROFILE_PARAM
+		: profile.person.id === viewer.id
+			? null
+			: profile.person.id;
 
 /** The viewer first, then the others they may view, then Famille when they may see it. */
-export const listProfileOptions = (
-	viewer: FamilyMember,
-	activeMembers: FamilyMember[]
-): ProfileOption[] => [
+export const listProfileOptions = (viewer: Viewer, activeUsers: User[]): ProfileOption[] => [
 	{ profileParam: null, label: `${viewer.name} (moi)`, colourKey: viewer.colourKey },
-	...activeMembers
-		.filter((member) => member.id !== viewer.id && canViewProfile(viewer, member))
-		.map((member) => ({
-			profileParam: member.id,
-			label: member.name,
-			colourKey: member.colourKey
+	...activeUsers
+		.filter((user) => user.id !== viewer.id && canViewProfile(viewer, user))
+		.map((user) => ({
+			profileParam: profileParamFor(viewer, { kind: 'person', person: user }),
+			label: user.name,
+			colourKey: user.colourKey
 		})),
 	...(canViewFamilyProfile(viewer)
-		? [{ profileParam: FAMILY_PROFILE_PARAM, label: '👪 Famille', colourKey: null }]
+		? [
+				{
+					profileParam: profileParamFor(viewer, { kind: 'family' }),
+					label: '👪 Famille',
+					colourKey: null
+				}
+			]
 		: [])
 ];
 
 /** The profile `?profil=` selects; leaving it out means the viewer. */
 export const selectProfile = (
-	viewer: FamilyMember,
-	activeMembers: FamilyMember[],
+	viewer: Viewer,
+	activeUsers: User[],
 	profileParam: string | null
 ): SelectedProfile | 'forbidden' | 'unknown' => {
 	if (profileParam === FAMILY_PROFILE_PARAM)
 		return canViewFamilyProfile(viewer) ? { kind: 'family' } : 'forbidden';
-	const person = profileParam ? activeMembers.find((member) => member.id === profileParam) : viewer;
+	const person = profileParam ? activeUsers.find((user) => user.id === profileParam) : viewer;
 	if (!person) return 'unknown';
 	return canViewProfile(viewer, person) ? { kind: 'person', person } : 'forbidden';
 };
 
-/** Who the home logs for unless "Fait par" says otherwise: the profile on screen, if allowed. */
-export const defaultPerformerFor = (viewer: Viewer, selectedProfile: SelectedProfile) =>
-	selectedProfile.kind === 'person' && canLogFor(viewer, selectedProfile.person)
-		? selectedProfile.person.id
-		: viewer.id;
-
-/** The "Fait par" choices: the members the viewer may log for (spec Q3). */
-export const listPerformerOptions = (viewer: Viewer, activeMembers: FamilyMember[]) =>
-	activeMembers.filter((member) => canLogFor(viewer, member));
-
-/** Every active user, oldest first (UUID v7 ids sort by creation). */
-export const listActiveMembers = async (db: D1Database): Promise<FamilyMember[]> => {
-	const { results } = await db
-		.prepare('SELECT id, role, name, colour_key FROM users WHERE deleted_at IS NULL ORDER BY id')
-		.all<{ id: string; role: UserRole; name: string; colour_key: ColourKey }>();
-	return results.map((row) => ({
-		id: row.id,
-		role: row.role,
-		name: row.name,
-		colourKey: row.colour_key
-	}));
-};
-
 /**
- * The selected profile and the switcher's options for Accueil / Historique / Rapports. A profile the
- * viewer may not see is a 403 (spec Q8: a child sees only themselves, a parent not the other parent).
+ * The selected profile and the header's switcher data for Accueil / Historique / Rapports. A profile
+ * the viewer may not see is a 403 (spec Q8: a child sees only themselves, a parent not the other parent).
  */
 export const loadSelectedProfile = async (db: D1Database, viewer: Viewer, url: URL) => {
-	const activeMembers = await listActiveMembers(db);
-	const selectedProfile = selectProfile(viewer, activeMembers, url.searchParams.get('profil'));
+	const activeUsers = await listActiveUsers(db);
+	const selectedProfile = selectProfile(viewer, activeUsers, url.searchParams.get('profil'));
 	if (selectedProfile === 'unknown') error(404, 'Profil introuvable');
 	if (selectedProfile === 'forbidden') error(403, 'Tu ne peux pas voir ce profil');
 	return {
-		activeMembers,
-		selectedProfile,
-		profileOptions: listProfileOptions(viewer, activeMembers)
+		activeUsers,
+		/** What the layout's header and tab links read from `page.data` (`App.PageData`). */
+		profileHeader: {
+			selectedProfile,
+			selectedProfileParam: profileParamFor(viewer, selectedProfile),
+			profileOptions: listProfileOptions(viewer, activeUsers)
+		}
 	};
 };

@@ -6,7 +6,8 @@ brackets when there is one.
 ## People and access
 
 - **User**: a family member with a row in `users`. Has a role, a name and a colour. Deactivated =
-  `deleted_at` is set (soft delete); a deactivated user can't get in.
+  `deleted_at` is set (soft delete); a deactivated user can't get in. Code type `User`
+  (`domain.ts`), read through `src/lib/server/users.ts`; not "member".
 - **Role**: `admin`, `parent` or `child` [admin, parent, enfant]. Spec Q8.
 - **Admin**: the role that manages members and chore types. There is always at least one **active
   admin** (spec Q10); a deactivated admin doesn't count.
@@ -23,7 +24,8 @@ brackets when there is one.
 - **Selected profile**: the person (or Famille) the profile switcher shows; no `?profil=` means the
   viewer. The page wears their colour (`--color-primary`), Famille stays neutral.
 - **Family profile** [Famille]: the profile option that shows the whole household, for parents and
-  the admin (spec Q8). Code says `familyProfile`, not `famille`.
+  the admin (spec Q8). Code says `{ kind: 'family' }` (a `SelectedProfile`) and
+  `FAMILY_PROFILE_PARAM` (its `?profil=` value, `famille`); "family" alone means this profile.
 
 ## Chores
 

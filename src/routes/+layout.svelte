@@ -4,7 +4,7 @@
 	import logo from '#lib/assets/logo.svg';
 	import Icon, { type IconGlyph } from '#lib/components/Icon.svelte';
 	import ProfileSwitcher from '#lib/components/ProfileSwitcher.svelte';
-	import { FAMILY_PROFILE_PARAM, PERSONAL_COLOURS } from '#lib/domain.js';
+	import { PERSONAL_COLOURS } from '#lib/domain.js';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { setChoreOutbox, setShowToast } from '#lib/app-context.js';
@@ -69,20 +69,14 @@
 	const currentTab = $derived(tabs.find((tab) => tab.routeId === page.route.id));
 
 	// Spec Q8: `?profil=` is kept across Accueil / Historique / Rapports; leaving it out means yourself.
-	const profileParam = $derived(page.url.searchParams.get('profil'));
+	// Taken from the load, not the URL: a 403/404 page has none, so its tabs lead back out.
+	const selectedProfileParam = $derived(page.data.selectedProfileParam ?? null);
 	const tabHref = (tab: Tab, tabProfileParam: string | null) =>
 		tab.showsProfile && tabProfileParam
 			? resolve(`${tab.routeId}?profil=${encodeURIComponent(tabProfileParam)}`)
 			: tab.href;
 	// Only set on the profile pages, by their loads; null on the rest (Réglages, errors).
 	const selectedProfile = $derived(page.data.selectedProfile);
-	const selectedProfileParam = $derived(
-		selectedProfile?.kind === 'family'
-			? FAMILY_PROFILE_PARAM
-			: selectedProfile && selectedProfile.person.id !== data.viewer.id
-				? selectedProfile.person.id
-				: null
-	);
 	// The page wears the selected person's colour (spec Q8, Q10), the viewer's off the profile pages; Famille stays neutral.
 	const primaryColour = $derived(
 		selectedProfile?.kind === 'family'
@@ -114,7 +108,7 @@
 		</a>
 		{#each tabs as tab (tab.href)}
 			<a
-				href={tabHref(tab, profileParam)}
+				href={tabHref(tab, selectedProfileParam)}
 				class={['btn justify-start', tab === currentTab ? 'btn-primary' : 'btn-ghost']}
 				aria-current={tab === currentTab ? 'page' : undefined}
 			>
@@ -164,7 +158,7 @@
 	<nav class="dock border-t-2 border-base-content bg-base-200 md:hidden">
 		{#each tabs as tab (tab.href)}
 			<a
-				href={tabHref(tab, profileParam)}
+				href={tabHref(tab, selectedProfileParam)}
 				class={{ 'dock-active text-primary': tab === currentTab }}
 				aria-current={tab === currentTab ? 'page' : undefined}
 			>

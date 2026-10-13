@@ -28,20 +28,20 @@ export const PERSONAL_COLOURS: Record<ColourKey, { background: string; content: 
 	raspberry: { background: '#c2185b', content: '#ffffff' }
 };
 
-/** The active `users` row behind a request (spec Q20 point 4). */
-export type Viewer = { id: string; role: UserRole; name: string; colourKey: ColourKey };
-
 /** Just what the access policy needs to know about a person. */
 export type PersonRef = { id: string; role: UserRole };
 
-/** An active user as the profile switcher and "Fait par" show them. */
-export type FamilyMember = PersonRef & { name: string; colourKey: ColourKey };
+/** An active `users` row, as the pages show it (the profile switcher, "Fait par"). */
+export type User = PersonRef & { name: string; colourKey: ColourKey };
+
+/** The active user behind a request (spec Q20 point 4). */
+export type Viewer = User;
 
 /** The `?profil=` value of the family profile (spec Q8); leaving it out means the viewer. */
 export const FAMILY_PROFILE_PARAM = 'famille';
 
 /** The profile on screen (spec Q8): one person, or the whole household. */
-export type SelectedProfile = { kind: 'person'; person: FamilyMember } | { kind: 'family' };
+export type SelectedProfile = { kind: 'person'; person: User } | { kind: 'family' };
 
 /** One entry of the profile switcher; `profileParam` null = the viewer (no `?profil=`). */
 export type ProfileOption = {
