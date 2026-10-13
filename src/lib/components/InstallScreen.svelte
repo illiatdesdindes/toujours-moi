@@ -23,8 +23,9 @@
 	<img src={logo} alt="" class="size-24 rounded-3xl pop-edge" />
 	<h1 class="text-2xl font-bold">Installe <b>Toujours Moi!</b></h1>
 	<p>
-		<b>Toujours Moi!</b> s'utilise comme une application. Installe-la sur ton téléphone pour noter tes
-		tâches en deux taps et recevoir les notifications.
+		Vaisselle, lessive, poubelles… <b class="whitespace-nowrap">Toujours Moi!</b> compte qui s'en occupe
+		à la maison. Installe-la sur ton téléphone pour noter tes tâches ménagères en deux clics, et recevoir
+		une notification quand quelqu'un en note une.
 	</p>
 	{#if canPrompt}
 		<!-- h-auto: daisyUI's fixed btn height clips a wrapped label on a narrow phone. -->

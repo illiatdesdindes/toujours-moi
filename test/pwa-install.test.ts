@@ -20,6 +20,7 @@ describe('PWA install', () => {
 		async (path) => {
 			const html = await (await fetchPage(path, headers)).text();
 			expect(html).toContain('Installe <b>Toujours Moi!</b>');
+			expect(html).toContain('noter tes tâches ménagères en deux clics');
 			expect(html).toMatch(/Installer l(&#39;|')application/);
 			expect(html).toContain('navigator.serviceWorker.register');
 			// Shown and hidden by the one `install-gate` media query (layout.css).

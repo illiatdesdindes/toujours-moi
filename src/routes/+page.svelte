@@ -139,7 +139,7 @@
 
 	<section aria-labelledby="chore-type-heading">
 		<h2 id="chore-type-heading" class="text-sm font-semibold opacity-70">
-			Quoi ? <span class="font-normal">(un tap enregistre)</span>
+			Quoi ? <span class="font-normal">(un clic enregistre)</span>
 		</h2>
 		<div class="mt-2">
 			<ChoreTypePicker choreTypes={data.choreTypes} onPick={logChoreType} />
