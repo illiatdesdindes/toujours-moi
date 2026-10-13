@@ -51,8 +51,10 @@
 				deviceNotifications = 'off';
 				return;
 			}
-			if ((await Notification.requestPermission()) !== 'granted')
-				return void (deviceNotifications = 'denied');
+			// A dismissed prompt answers 'default': still askable, so back to off, not locked.
+			const permission = await Notification.requestPermission();
+			if (permission !== 'granted')
+				return void (deviceNotifications = permission === 'denied' ? 'denied' : 'off');
 			const subscription = await pushManager.subscribe({
 				userVisibleOnly: true,
 				applicationServerKey: vapidPublicKey
@@ -84,7 +86,11 @@
 			);
 			showToast('🔔 Notification de test envoyée');
 		} catch {
-			showToast('Pas envoyée : désactive puis réactive les notifications');
+			showToast(
+				navigator.onLine
+					? 'Pas envoyée : désactive puis réactive les notifications'
+					: 'Pas de réseau : réessaie quand il revient'
+			);
 		} finally {
 			isTesting = false;
 		}
@@ -105,14 +111,16 @@
 			/>
 			Notifications sur cet appareil
 		</label>
+		<!-- The spinner sits over the hidden label, so the button keeps its width and the row doesn't wrap. -->
 		<button
 			type="button"
-			class="btn btn-sm"
+			class="btn relative btn-sm"
 			disabled={deviceNotifications !== 'on' || isTesting}
+			aria-busy={isTesting}
 			onclick={requestTestNotification}
 		>
-			{#if isTesting}<span class="loading loading-sm loading-spinner"></span>{/if}
-			Tester
+			{#if isTesting}<span class="loading absolute loading-sm loading-spinner"></span>{/if}
+			<span class:invisible={isTesting}>Tester</span>
 		</button>
 	</div>
 	{#if deviceNotifications === 'unsupported'}
