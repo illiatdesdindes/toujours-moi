@@ -35,7 +35,7 @@ export const sendTestNotification = async (
 		db,
 		subscription,
 		{
-			title: 'TJM',
+			title: 'Toujours Moi!',
 			body: 'Les notifications marchent sur cet appareil.',
 			tag: 'test',
 			url: '/reglages'

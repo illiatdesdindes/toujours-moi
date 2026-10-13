@@ -19,7 +19,7 @@ describe('PWA install', () => {
 		'%s registers the service worker and has the install screen, the app behind the same gate',
 		async (path) => {
 			const html = await (await fetchPage(path, headers)).text();
-			expect(html).toContain('Installe TJM');
+			expect(html).toContain('Installe <b>Toujours Moi!</b>');
 			expect(html).toMatch(/Installer l(&#39;|')application/);
 			expect(html).toContain('navigator.serviceWorker.register');
 			// Shown and hidden by the one `install-gate` media query (layout.css).
