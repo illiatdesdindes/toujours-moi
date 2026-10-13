@@ -8,7 +8,10 @@
 	let promptInstall: () => Promise<InstallPromptOutcome> = async () => 'unavailable';
 
 	onMount(() => {
-		const installPrompt = listenForInstallPrompt(window, (canPromptNow) => (canPrompt = canPromptNow));
+		const installPrompt = listenForInstallPrompt(
+			window,
+			(canPromptNow) => (canPrompt = canPromptNow)
+		);
 		promptInstall = installPrompt.promptInstall;
 		return installPrompt.stopListening;
 	});

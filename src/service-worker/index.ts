@@ -24,7 +24,11 @@ self.addEventListener('activate', (event) => {
 		caches
 			.keys()
 			.then((keys) =>
-				Promise.all(keys.filter((k) => k !== SHELL_CACHE_NAME && k !== PAGES_CACHE_NAME).map((k) => caches.delete(k)))
+				Promise.all(
+					keys
+						.filter((k) => k !== SHELL_CACHE_NAME && k !== PAGES_CACHE_NAME)
+						.map((k) => caches.delete(k))
+				)
 			)
 	);
 });
@@ -37,7 +41,9 @@ self.addEventListener('fetch', (event) => {
 	if (url.pathname.startsWith('/cdn-cgi/')) return;
 	if (SHELL_FILES.has(url.pathname)) {
 		event.respondWith(
-			caches.open(SHELL_CACHE_NAME).then(async (cache) => (await cache.match(url.pathname)) ?? fetch(request))
+			caches
+				.open(SHELL_CACHE_NAME)
+				.then(async (cache) => (await cache.match(url.pathname)) ?? fetch(request))
 		);
 		return;
 	}
