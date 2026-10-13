@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PersonRef } from '../domain';
 import {
 	canEditOrDeleteChore,
+	canEditPersonDetails,
 	canLogFor,
 	canManageChoreTypes,
 	canManageMembers,
@@ -66,6 +67,15 @@ describe('access policy', () => {
 		);
 		expect(canEditOrDeleteChore(parent, { performer: admin, authorUserId: 'admin' })).toBe(false);
 		expect(canEditOrDeleteChore(parent, { performer: parent, authorUserId: 'admin' })).toBe(true);
+	});
+
+	// Spec Q10: Mon profil, Enfants (parents), Membres (admin).
+	it.each([
+		[admin, ['admin', 'parent', 'other-parent', 'child', 'other-child']],
+		[parent, ['parent', 'child', 'other-child']],
+		[child, ['child']]
+	])('lets %o edit the name and colour of %o', (viewer, expected) => {
+		expect(allowed((person) => canEditPersonDetails(viewer, person))).toEqual(expected);
 	});
 
 	it.each([

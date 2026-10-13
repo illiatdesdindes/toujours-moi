@@ -34,6 +34,12 @@ export type PersonRef = { id: string; role: UserRole };
 /** An active `users` row, as the pages show it (the profile switcher, "Fait par"). */
 export type User = PersonRef & { name: string; colourKey: ColourKey };
 
+/** A Membres row (spec Q10): any user, deactivated ones too. */
+export type Member = User & { email: string; isActive: boolean };
+
+/** A chore type as Types de tâches lists it (spec Q2): archived ones too, in picker order. */
+export type ChoreTypeCatalogEntry = ChoreTypeOption & { isArchived: boolean };
+
 /** The active user behind a request (spec Q20 point 4). */
 export type Viewer = User;
 

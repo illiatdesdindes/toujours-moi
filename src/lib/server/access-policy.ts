@@ -29,6 +29,10 @@ export const canEditOrDeleteChore = (
 /** Spec Q6: the "✎ 3" update counter on Historique rows. */
 export const canSeeChoreUpdateCount = (viewer: PersonRef) => viewer.role === 'admin';
 
+/** Spec Q10: everyone their own name and colour (Mon profil), a parent the children's (Enfants), the admin everyone's (Membres). */
+// ponytail: the same people as canViewProfile today; give it its own body when the two rules part.
+export const canEditPersonDetails = canViewProfile;
+
 export const canManageMembers = (viewer: PersonRef) => viewer.role === 'admin';
 export const canManageChoreTypes = (viewer: PersonRef) => viewer.role === 'admin';
 
