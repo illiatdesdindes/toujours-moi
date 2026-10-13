@@ -65,7 +65,11 @@
 				await invalidateAll();
 				return null;
 			}
-			if (answer.type === 'failure') return String(answer.data?.message ?? 'Refusé');
+			if (answer.type === 'failure') {
+				// Deleted elsewhere meanwhile: drop it from the list too; the sheet keeps the reason.
+				if (answer.status === 404) await invalidateAll();
+				return String(answer.data?.message ?? 'Refusé');
+			}
 			return 'Erreur du serveur : réessaie';
 		} catch {
 			return OFFLINE_MESSAGE;

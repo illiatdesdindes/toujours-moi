@@ -58,8 +58,9 @@
 				: null
 	);
 
-	let dialog: HTMLDialogElement;
-	$effect(() => dialog.showModal());
+	// null once unmounted: the home unmounts the sheet in its onSave, before the answer comes back.
+	let dialog: HTMLDialogElement | null = null;
+	$effect(() => dialog?.showModal());
 
 	let serverError = $state<string | null>(null);
 	let isSending = $state(false);
@@ -68,7 +69,7 @@
 		isSending = true;
 		serverError = (await answer) ?? null;
 		isSending = false;
-		if (!serverError) dialog.close();
+		if (!serverError) dialog?.close();
 	};
 	const save = () => {
 		if (draftError || readOnly) return;
@@ -101,7 +102,7 @@
 				type="button"
 				class="btn btn-circle btn-ghost btn-sm"
 				aria-label="Fermer"
-				onclick={() => dialog.close()}><Icon glyph="x-mark" /></button
+				onclick={() => dialog?.close()}><Icon glyph="x-mark" /></button
 			>
 		</div>
 		{#if readOnly}
@@ -116,7 +117,14 @@
 				save();
 			}}
 		>
-			<fieldset class="space-y-3" disabled={readOnly}>
+			<!-- Read-only values stay legible (daisyUI greys disabled inputs to 40 %): they're all the sheet shows. -->
+			<fieldset
+				class={[
+					'space-y-3',
+					readOnly && '[&_:is(input,select,textarea):disabled]:text-base-content'
+				]}
+				disabled={readOnly}
+			>
 				<DurationStepper bind:durationMinutes={draft.durationMinutes} compact />
 				<ChoreTypePicker
 					{choreTypes}

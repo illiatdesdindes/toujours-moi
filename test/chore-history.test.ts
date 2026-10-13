@@ -267,6 +267,18 @@ describe('Historique', () => {
 		expect((await deleteChore(ADMIN_ID, uuidV7())).status).toBe(404);
 	});
 
+	it('answers 400 to a malformed chore id, on update and delete alike', async () => {
+		expect((await deleteChore(ADMIN_ID, 'x')).status).toBe(400);
+		expect(
+			(
+				await updateChore(ADMIN_ID, {
+					...(await editFields(await seedChore(ADMIN_ID))),
+					id: 'nope'
+				})
+			).status
+		).toBe(400);
+	});
+
 	describe('the list', () => {
 		it("shows the profile's chores, newest first, and drops deleted ones", async () => {
 			const older = await seedChore(CHILD_ID, CHILD_ID, 30);

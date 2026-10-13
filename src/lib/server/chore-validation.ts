@@ -4,6 +4,8 @@ import { endsInTheFuture, isValidDurationMinutes } from '../chore-timing';
 import { MAX_CHORE_NOTE_LENGTH, type ChoreFields, type UserRole } from '../domain';
 import { isUuidV7 } from '../uuid';
 
+export const INVALID_CHORE_ID_MESSAGE = 'Identifiant de tâche invalide';
+
 /** A phone's clock may run a little ahead of the server's: don't call that the future. */
 const CLOCK_SKEW_ALLOWANCE_MS = 2 * 60_000;
 
@@ -14,7 +16,7 @@ export const parseChoreFields = (body: unknown): ChoreFields | string => {
 		string,
 		unknown
 	>;
-	if (!isUuidV7(id)) return 'Identifiant de tâche invalide';
+	if (!isUuidV7(id)) return INVALID_CHORE_ID_MESSAGE;
 	if (!isUuidV7(choreTypeId)) return 'Type de tâche inconnu';
 	if (!isUuidV7(performerUserId)) return 'Personne inconnue';
 	if (typeof durationMinutes !== 'number' || !isValidDurationMinutes(durationMinutes))

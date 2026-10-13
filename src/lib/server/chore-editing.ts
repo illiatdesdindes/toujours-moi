@@ -8,6 +8,7 @@ import {
 	endsInTheFutureForTheServer,
 	findActivePerformer,
 	findChoreTypeRefusal,
+	INVALID_CHORE_ID_MESSAGE,
 	parseChoreFields
 } from './chore-validation';
 import { saveWithVersion } from './record-versions';
@@ -20,10 +21,11 @@ const FORBIDDEN = refused(403, 'Tu ne peux pas modifier cette tâche');
 
 /**
  * The live (not deleted) chore's current type and performer when the access policy lets the viewer
- * edit or delete it; else the refusal to answer (404 unknown or deleted, 403 not theirs to touch).
+ * edit or delete it; else the refusal to answer (400 malformed id, 404 unknown or deleted, 403 not
+ * theirs to touch).
  */
 const findChoreTheViewerMayEdit = async (db: D1Database, viewer: Viewer, choreId: unknown) => {
-	if (!isUuidV7(choreId)) return NOT_FOUND;
+	if (!isUuidV7(choreId)) return refused(400, INVALID_CHORE_ID_MESSAGE);
 	const chore = await db
 		.prepare(
 			`SELECT chore_type_id, performer_user_id, author_user_id, users.role AS performer_role

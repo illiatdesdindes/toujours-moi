@@ -9,6 +9,7 @@
 - [x] **Integration tests** (`test/chore-history.test.ts`): edit and delete matrix (child own / logged for them by a parent / another child's; parent own / a child's / the other parent's; admin on a parent's), each checking the versions written (or none); one version per save; future and invalid duration refused with nothing written; a parent may hand a chore only to someone they may log for; 404 on unknown or already deleted; the list per profile (deleted hidden, `canEdit`, update count admin only, Famille 403 for a child); paging by 50 without splitting a day; the SSR page. Unit: `history-days.test.ts`, `startOfParisDay` in `paris-time.test.ts`.
 - [x] Browser pass, 390 px and 1280 px: as Papa (admin) list + infinite scroll to the last page (146 rows, 60 days, no horizontal scroll), edit → "✎ 1" badge and new day total, Supprimer cancelled keeps the sheet, confirmed removes the row + toast, DB shows versions 1–3 (`updated`, `updated`, `deleted`); as Maman on Famille: dots and names, Papa's rows 🔒 and read-only sheet, a child's row editable with "Fait par" Maman/Léa/Noé; as Léa: chores Maman logged for her 🔒 and read-only, no "Fait par", `/api/chores?profil=famille` 403; a save on a chore deleted meanwhile keeps the sheet open with "Tâche introuvable : elle a peut-être été supprimée". Home Modifier → Enregistrer and ✕ still work. `DEV_VIEWER_EMAIL` put back to Papa.
 - [x] `npm run lint && npm run check && npm test` green.
+- [x] QA findings applied (see After QA): home Modifier → Enregistrer without an unhandled rejection, a 404 refusal reloads the list, malformed ids 400 on both actions, legible read-only sheet.
 
 ## Decisions
 
@@ -37,6 +38,13 @@
 - **`deleteChore` takes `now = new Date()`**, as `updateChore` does.
 - **`choreColumnsFrom(chore)`** replaces the column map written out in both `logChore` and `updateChore`.
 
+### After QA
+
+- **The sheet's `dialog` ref may be null** (`dialog?.close()`, `dialog?.showModal()`): the home's `onSave` unmounts the sheet synchronously, so `closeUnlessRefused` found the ref already null after its `await` and threw "Cannot read properties of null (reading 'close')" on every home Modifier → Enregistrer (QA major). Options: make the home's `onSave` not unmount (it must, the pending chore is committed by then), or close synchronously when `onSave` returns void. The null guard is one place every caller goes through. Browser-checked: no `unhandledrejection`, no "[Unhandled rejection]" in the dev log, "✓ Enregistré" shows.
+- **A 404 refusal on Historique reloads the list** (`invalidateAll()` in `sendChoreAction`'s failure branch, 404 only): the chore was deleted elsewhere, so its row and day total go, while the sheet stays open with "Tâche introuvable : elle a peut-être été supprimée". 400/403 leave the list as is (nothing changed server-side). Browser-checked as Léa.
+- **A malformed chore id is 400 "Identifiant de tâche invalide" on both actions** (`INVALID_CHORE_ID_MESSAGE` shared from `chore-validation.ts`); unknown or deleted stays 404. New integration test.
+- **The read-only sheet's values use the full `base-content` colour**: the fieldset stays `disabled` (no editing, as the prototype), but inside it disabled `input`/`select`/`textarea` get `text-base-content` instead of daisyUI's 40 % grey. Options: `readonly` inputs (the type picker and stepper are buttons, still need `disabled`), or plain text for the details (a second layout to keep in step). Measured as Léa: rgb(29,36,64) on rgb(243,239,228), well above 4.5:1.
+
 ## Deviations from spec
 
 - **`GET /api/chores?profil=&avant=`** next to the spec's single `POST /api/chores` (Routes): Historique's next pages. Why: see Decisions. It shares the path and goes through the same profile check.
@@ -48,3 +56,4 @@
 
 - **Shared `PersonRef` mapping before `canEditOrDeleteChore`** (chore-editing.ts and chore-history.ts): skipped. Four lines in two places, and a helper would bring the DB column names (`performer_user_id`, `performer_role`) into the access policy, or make one server module import a row shape from another.
 - **The two `refused` helpers**: skipped. They aren't the same code: `chore-logging.ts` answers an API body (`{ status, body: { message } }`, 400/409/422), `chore-editing.ts` a form-action failure (`{ status, message }`, 400/403/404).
+- **QA: browser/Android back closes the page, not the sheet**: skipped. Spec and prototype say nothing about back, and the home's sheet does the same. Doing it means a shallow-routing history entry (`pushState`) per sheet, kept in step with `invalidateAll()` after a save and with the home's Modifier flow: not cheap, and a wrong history entry breaks navigation in a way that's worse than the current behaviour. Worth its own ticket if the family finds it annoying on the phone.
