@@ -18,6 +18,10 @@ export const formatDuration = (minutes: number) => {
 	return rest ? `${hours} h ${String(rest).padStart(2, '0')}` : `${hours} h`;
 };
 
+/** Rapports' change against the previous period: `+1 h 15`, `−30 min`, `=` (prototype 02). */
+export const formatSignedDuration = (minutes: number) =>
+	minutes === 0 ? '=' : `${minutes > 0 ? '+' : '−'}${formatDuration(Math.abs(minutes))}`;
+
 export const clampDurationMinutes = (minutes: number) =>
 	Math.min(MAX_DURATION_MINUTES, Math.max(MIN_DURATION_MINUTES, minutes));
 

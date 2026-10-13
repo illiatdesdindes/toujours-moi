@@ -84,3 +84,34 @@ export type HistoryChore = ChoreFields & {
 
 /** One page of Historique; `nextCursor` (`?avant=`) fetches the next, null on the last. */
 export type HistoryPage = { chores: HistoryChore[]; nextCursor: string | null };
+
+/** Rapports' numbers for one period (spec Q9), summed in SQL by `report-stats.ts`. */
+export type ReportStats = {
+	totalMinutes: number;
+	choreCount: number;
+	previousTotalMinutes: number;
+	/** Longest first. */
+	byType: {
+		choreTypeId: string;
+		icon: string;
+		shortLabel: string;
+		fullLabel: string;
+		minutes: number;
+		count: number;
+		percent: number;
+	}[];
+	/** Longest first; the page shows it for Famille only. */
+	byPerson: {
+		userId: string;
+		name: string;
+		colourKey: ColourKey;
+		minutes: number;
+		count: number;
+		percent: number;
+	}[];
+	/** One per `period.buckets`, in order: each person's minutes in that sub-period. */
+	buckets: {
+		totalMinutes: number;
+		segments: { userId: string; colourKey: ColourKey; minutes: number }[];
+	}[];
+};

@@ -77,6 +77,14 @@
 		tab.showsProfile && tabProfileParam
 			? resolve(`${tab.routeId}?profil=${encodeURIComponent(tabProfileParam)}`)
 			: tab.href;
+	/** The page on screen with another `?profil=`, keeping its other params (Rapports' `?periode=&date=`). */
+	const thisPageWithProfile = (tab: Tab, optionProfileParam: string | null) => {
+		const query = new URLSearchParams([
+			...[...page.url.searchParams].filter(([param]) => param !== 'profil'),
+			...(optionProfileParam ? [['profil', optionProfileParam]] : [])
+		]);
+		return query.size ? resolve(`${tab.routeId}?${query}`) : tab.href;
+	};
 	// Only set on the profile pages, by their loads; null on the rest (Réglages, errors).
 	const selectedProfile = $derived(page.data.selectedProfile);
 	// The page wears the selected person's colour (spec Q8, Q10), the viewer's off the profile pages; Famille stays neutral.
@@ -132,7 +140,7 @@
 				<ProfileSwitcher
 					profileOptions={page.data.profileOptions}
 					{selectedProfileParam}
-					hrefFor={(optionProfileParam) => tabHref(currentTab, optionProfileParam)}
+					hrefFor={(optionProfileParam) => thisPageWithProfile(currentTab, optionProfileParam)}
 				/>
 			{:else}
 				<span class="font-semibold">{data.viewer.name}</span>

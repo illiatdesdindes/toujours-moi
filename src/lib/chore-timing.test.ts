@@ -4,6 +4,7 @@ import {
 	deriveStartedAt,
 	endsInTheFuture,
 	formatDuration,
+	formatSignedDuration,
 	isValidDurationMinutes
 } from './chore-timing';
 
@@ -16,6 +17,14 @@ describe('formatDuration', () => {
 		[135, '2 h 15'],
 		[1440, '24 h']
 	])('%i minutes → %s', (minutes, label) => expect(formatDuration(minutes)).toBe(label));
+});
+
+describe('formatSignedDuration', () => {
+	it.each([
+		[75, '+1 h 15'],
+		[-30, '−30 min'],
+		[0, '=']
+	])('%i minutes → %s', (minutes, label) => expect(formatSignedDuration(minutes)).toBe(label));
 });
 
 describe('clampDurationMinutes', () => {
