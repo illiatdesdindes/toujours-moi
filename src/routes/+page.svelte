@@ -12,6 +12,7 @@
 	import ChoreWhenAndNoteFields from '#lib/components/ChoreWhenAndNoteFields.svelte';
 	import DurationStepper from '#lib/components/DurationStepper.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import PerformerField from '#lib/components/PerformerField.svelte';
 	import PendingChoreCard from '#lib/components/PendingChoreCard.svelte';
 	import type { ChoreTypeOption, NewChore } from '#lib/domain.js';
 	import {
@@ -29,14 +30,23 @@
 
 	// svelte-ignore state_referenced_locally
 	let durationMinutes = $state(data.defaultDurationMinutes);
-	/** The collapsed line's overrides; empty date and time = now − duration (spec Q4). */
-	let quickLogOverrides = $state({ open: false, date: '', time: '', note: '' });
+	/** The collapsed line's overrides; empty date and time = now − duration (spec Q4), empty performer = the profile's. */
+	const NO_QUICK_LOG_OVERRIDES = { open: false, date: '', time: '', note: '', performerUserId: '' };
+	let quickLogOverrides = $state({ ...NO_QUICK_LOG_OVERRIDES });
 	let now = $state(new Date());
 	let pendingChore = $state<NewChore | null>(null);
 	let choreInEditSheet = $state<NewChore | null>(null);
 
 	const choreTypeById = (choreTypeId: string) =>
 		data.choreTypes.find((choreType) => choreType.id === choreTypeId);
+	const performerById = (performerUserId: string) =>
+		data.performerOptions.find((performer) => performer.id === performerUserId);
+	/** "Moi" for the viewer, else the performer's name (spec Q8). */
+	const performerLabelFor = (performerUserId: string) =>
+		performerUserId === data.viewer.id ? 'Moi' : (performerById(performerUserId)?.name ?? '?');
+	const performerUserId = $derived(
+		quickLogOverrides.performerUserId || data.defaultPerformerUserId
+	);
 
 	const startedAtFor = (tappedAt: Date) => {
 		const derived = deriveStartedAt(tappedAt, durationMinutes);
@@ -48,17 +58,17 @@
 		);
 	};
 	const quickLogOverridesSummary = $derived(
-		`${formatParisDayAndTime(startedAtFor(now), now)} · Moi${quickLogOverrides.note.trim() ? ' · 📝' : ''}`
+		`${formatParisDayAndTime(startedAtFor(now), now)} · ${performerLabelFor(performerUserId)}${quickLogOverrides.note.trim() ? ' · 📝' : ''}`
 	);
 
-	/** `Vaisselle · 45 min` */
+	/** `Vaisselle · 45 min`, `Vaisselle · 45 min · Léa` when logged for someone (prototype 02). */
 	const choreLabelFor = (chore: NewChore) =>
-		`${choreTypeById(chore.choreTypeId)?.shortLabel} · ${formatDuration(chore.durationMinutes)}`;
+		`${choreTypeById(chore.choreTypeId)?.shortLabel} · ${formatDuration(chore.durationMinutes)}${chore.performerUserId === data.viewer.id ? '' : ` · ${performerLabelFor(chore.performerUserId)}`}`;
 
 	const commit = async (chore: NewChore, savedToastMessage: string) => {
 		const choreLabel = choreLabelFor(chore);
 		const submitted = choreOutbox.submit(chore, choreLabel); // stored before this returns
-		quickLogOverrides = { open: false, date: '', time: '', note: '' };
+		quickLogOverrides = { ...NO_QUICK_LOG_OVERRIDES };
 		const isWaitingForNetwork = await submitted;
 		// Never "enregistré" while it only sits in this browser.
 		showToast(
@@ -93,7 +103,7 @@
 			durationMinutes,
 			startedAt: startedAt.toISOString(),
 			note: quickLogOverrides.note.trim() || null,
-			performerUserId: data.viewer.id
+			performerUserId
 		});
 	};
 
@@ -146,7 +156,15 @@
 					bind:time={quickLogOverrides.time}
 					bind:note={quickLogOverrides.note}
 					latestDate={today}
-				/>
+				>
+					{#if data.performerOptions.length > 1}
+						<PerformerField
+							bind:performerUserId={quickLogOverrides.performerUserId}
+							performerOptions={data.performerOptions}
+							defaultPerformerName={performerById(data.defaultPerformerUserId)?.name ?? ''}
+						/>
+					{/if}
+				</ChoreWhenAndNoteFields>
 				<p class="text-xs opacity-70">Laisse date et début vides pour « maintenant − durée ».</p>
 			</div>
 		</details>
@@ -171,6 +189,7 @@
 		<ChoreEditSheet
 			chore={choreInEditSheet}
 			choreTypes={data.choreTypes}
+			performerOptions={data.performerOptions}
 			onSave={(chore) => {
 				choreInEditSheet = null;
 				void commit(chore, '✓ Enregistré'); // the prototype's saveSheet

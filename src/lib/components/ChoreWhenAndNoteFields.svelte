@@ -1,13 +1,15 @@
-<!-- A chore's date, start (Paris wall time, by the quarter hour) and one-line note (spec Q3, Q4): the home's details line and the edit sheet. -->
+<!-- A chore's date, start (Paris wall time, by the quarter hour) and one-line note (spec Q3, Q4): the home's details line and the edit sheet. `children` goes between the start and the note, full width ("Fait par"). -->
 <script lang="ts">
 	import { MAX_CHORE_NOTE_LENGTH } from '#lib/domain.js';
+	import type { Snippet } from 'svelte';
 
 	let {
 		date = $bindable(),
 		time = $bindable(),
 		note = $bindable(),
 		latestDate,
-		required = false
+		required = false,
+		children
 	}: {
 		/** `YYYY-MM-DD`, Paris. */
 		date: string;
@@ -18,6 +20,7 @@
 		latestDate: string;
 		/** The edit sheet's; the home leaves them empty for "now − duration". */
 		required?: boolean;
+		children?: Snippet;
 	} = $props();
 
 	// The pickers allow any minute; snap to the quarter (as Q4's derived start) so the home and the
@@ -49,6 +52,7 @@
 			{required}
 		/></label
 	>
+	{@render children?.()}
 	<label class="col-span-2"
 		>Note<input
 			class="input w-full input-sm"

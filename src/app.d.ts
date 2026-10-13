@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-import type { Viewer } from '#lib/domain.js';
+import type { ProfileOption, SelectedProfile, Viewer } from '#lib/domain.js';
 
 declare global {
 	namespace App {
@@ -8,7 +8,11 @@ declare global {
 		interface Locals {
 			viewer: Viewer;
 		}
-		// interface PageData {}
+		interface PageData {
+			/** Set by the profile pages (Accueil, Historique, Rapports; spec Q8) for the header. */
+			selectedProfile?: SelectedProfile;
+			profileOptions?: ProfileOption[];
+		}
 		// interface PageState {}
 	}
 	namespace Cloudflare {

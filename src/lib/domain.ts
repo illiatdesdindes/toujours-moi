@@ -16,11 +16,40 @@ export const COLOUR_KEYS = [
 ] as const;
 export type ColourKey = (typeof COLOUR_KEYS)[number];
 
+/** Each colour as `--color-primary` and its readable `--color-primary-content` (prototype 02). */
+export const PERSONAL_COLOURS: Record<ColourKey, { background: string; content: string }> = {
+	tomato: { background: '#c43a26', content: '#ffffff' },
+	tangerine: { background: '#f08a24', content: '#2a1300' },
+	mustard: { background: '#d9a404', content: '#241a00' },
+	sage: { background: '#7fa878', content: '#10200f' },
+	turquoise: { background: '#1aa39a', content: '#00201e' },
+	cornflower: { background: '#4565d0', content: '#ffffff' },
+	lavender: { background: '#a58bd8', content: '#1a1030' },
+	raspberry: { background: '#c2185b', content: '#ffffff' }
+};
+
 /** The active `users` row behind a request (spec Q20 point 4). */
 export type Viewer = { id: string; role: UserRole; name: string; colourKey: ColourKey };
 
 /** Just what the access policy needs to know about a person. */
 export type PersonRef = { id: string; role: UserRole };
+
+/** An active user as the profile switcher and "Fait par" show them. */
+export type FamilyMember = PersonRef & { name: string; colourKey: ColourKey };
+
+/** The `?profil=` value of the family profile (spec Q8); leaving it out means the viewer. */
+export const FAMILY_PROFILE_PARAM = 'famille';
+
+/** The profile on screen (spec Q8): one person, or the whole household. */
+export type SelectedProfile = { kind: 'person'; person: FamilyMember } | { kind: 'family' };
+
+/** One entry of the profile switcher; `profileParam` null = the viewer (no `?profil=`). */
+export type ProfileOption = {
+	profileParam: string | null;
+	label: string;
+	/** Null for Famille, which stays neutral. */
+	colourKey: ColourKey | null;
+};
 
 /** A chore type as the picker shows it (spec Q2): icon + short label, full label for `title`. */
 export type ChoreTypeOption = { id: string; shortLabel: string; fullLabel: string; icon: string };
