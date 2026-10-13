@@ -117,8 +117,8 @@
 	<nav
 		class="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 border-r-2 border-base-content bg-base-200 p-4 md:flex"
 	>
-		<a href={resolve('/')} class="mb-4 flex items-center gap-2 text-2xl font-black">
-			<img src={logo} alt="" class="size-9" />TJM
+		<a href={resolve('/')} class="mb-4 flex items-center gap-2 text-xl font-black">
+			<img src={logo} alt="" class="size-9" />Toujours Moi!
 		</a>
 		{#each tabs as tab (tab.href)}
 			<a

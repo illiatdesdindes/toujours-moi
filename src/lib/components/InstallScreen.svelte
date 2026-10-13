@@ -21,10 +21,10 @@
 	class="hidden min-h-dvh flex-col items-center justify-center gap-5 bg-base-100 p-8 text-center text-base-content install-gate:flex"
 >
 	<img src={logo} alt="" class="size-24 rounded-3xl pop-edge" />
-	<h1 class="text-2xl font-bold">Installe TJM</h1>
+	<h1 class="text-2xl font-bold">Installe <b>Toujours Moi!</b></h1>
 	<p>
-		TJM s'utilise comme une application. Installe-la sur ton téléphone pour noter tes tâches en deux
-		taps et recevoir les notifications.
+		<b>Toujours Moi!</b> s'utilise comme une application. Installe-la sur ton téléphone pour noter tes
+		tâches en deux taps et recevoir les notifications.
 	</p>
 	{#if canPrompt}
 		<!-- h-auto: daisyUI's fixed btn height clips a wrapped label on a narrow phone. -->
@@ -33,7 +33,7 @@
 			class="btn h-auto w-full py-3 btn-lg btn-primary"
 			onclick={() => promptInstall()}
 		>
-			Installer TJM
+			Installer <b>Toujours Moi!</b>
 		</button>
 	{/if}
 	<p class="text-sm opacity-70">

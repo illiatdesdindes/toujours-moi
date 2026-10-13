@@ -75,10 +75,10 @@ brackets when there is one.
 
 ## App
 
-- **Install screen** [Installe TJM]: the blocking screen a phone tab that isn't installed gets
+- **Install screen** [Installe Toujours Moi!]: the blocking screen a phone tab that isn't installed gets
   instead of the app (spec Q12; `InstallScreen.svelte`). Who sees it is the `install-gate` CSS
   variant (`layout.css`): coarse pointer, narrower than `md`, not `display-mode: standalone`.
-  Desktop is exempt. Its "Installer TJM" button shows Chrome's **install prompt**
+  Desktop is exempt. Its "Installer Toujours Moi!" button shows Chrome's **install prompt**
   (`beforeinstallprompt`, `install-prompt.ts`) when Chrome offers one.
 - **App shell**: the built JS/CSS and `static/`, cached by the service worker per deploy
   (`src/service-worker/index.ts`), with the last copy of each page for offline.
