@@ -5,9 +5,9 @@ import {
 	sendChoreToServer,
 	type SendOutcome
 } from './chore-outbox';
-import type { NewChore } from './domain';
+import type { ChoreFields } from './domain';
 
-const chore = (id: string): NewChore => ({
+const chore = (id: string): ChoreFields => ({
 	id,
 	choreTypeId: 'type-dishes',
 	durationMinutes: 45,
@@ -26,7 +26,7 @@ const memoryStorage = () => {
 };
 
 const outboxWith = (outcomes: SendOutcome[], storage = memoryStorage(), viewerId = 'papa') => {
-	const send = vi.fn<(chore: NewChore) => Promise<SendOutcome>>(
+	const send = vi.fn<(chore: ChoreFields) => Promise<SendOutcome>>(
 		async () => outcomes.shift() ?? 'saved'
 	);
 	const rejected: [string, string, string | undefined][] = [];

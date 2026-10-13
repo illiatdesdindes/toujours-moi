@@ -223,6 +223,42 @@ describe('Historique', () => {
 		expect((await updateChore(ADMIN_ID, await editFields(choreId))).status).toBe(200);
 	});
 
+	it('keeps a chore’s own archived type but refuses moving it onto another archived one', async () => {
+		const choreId = await seedChore(ADMIN_ID);
+		await env.DB.prepare(
+			"UPDATE chore_types SET archived_at = '2026-10-01T00:00:00Z' WHERE id IN (?, ?)"
+		)
+			.bind(DISHES_ID, COOKING_ID)
+			.run();
+		try {
+			const onAnotherArchivedType = await updateChore(ADMIN_ID, await editFields(choreId));
+			expect(onAnotherArchivedType.status).toBe(400);
+			expect(onAnotherArchivedType.data).toContain('Type de tâche archivé');
+			expect(
+				(await updateChore(ADMIN_ID, await editFields(choreId, { choreTypeId: DISHES_ID }))).status
+			).toBe(200);
+		} finally {
+			await env.DB.prepare('UPDATE chore_types SET archived_at = NULL WHERE id IN (?, ?)')
+				.bind(DISHES_ID, COOKING_ID)
+				.run();
+		}
+	});
+
+	it('lets the admin edit a deactivated person’s chore, but not hand a chore to them', async () => {
+		const deactivatedPersonsChoreId = await seedChore(PARENT_ID);
+		const adminsChoreId = await seedChore(ADMIN_ID);
+		await env.DB.prepare("UPDATE users SET deleted_at = '2026-10-01T00:00:00Z' WHERE id = ?")
+			.bind(PARENT_ID)
+			.run();
+		expect((await updateChore(ADMIN_ID, await editFields(deactivatedPersonsChoreId))).status).toBe(
+			200
+		);
+		expect(
+			(await updateChore(ADMIN_ID, await editFields(adminsChoreId, { performerUserId: PARENT_ID })))
+				.status
+		).toBe(400);
+	});
+
 	it('answers 404 for an unknown or already deleted chore', async () => {
 		const choreId = await seedChore(ADMIN_ID);
 		expect((await deleteChore(ADMIN_ID, choreId)).status).toBe(200);

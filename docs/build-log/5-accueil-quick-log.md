@@ -45,7 +45,7 @@
 
 - **`ChoreWhenAndNoteFields.svelte`**: the date / début / note fields, shared by the home's details line and the edit sheet (`required` in the sheet, empty allowed on the home). The sheet's note now sits in the same 2-column grid, full width, as on the home.
 - **Policy refusal is 422, not 403** (`canLogFor` in `chore-logging.ts`): the outbox already drops 422 and shows the message, while 403 stays retried for the Access JWT case. This also settles the #6 "Fait par" worry: a refused chore no longer sits in the outbox.
-- **`NewChore` moved to `domain.ts`**: it is the API contract, used by the server; the server no longer imports the browser outbox module.
+- **`ChoreFields` moved to `domain.ts`**: it is the API contract, used by the server; the server no longer imports the browser outbox module.
 - **`readLastDurationMinutes`** in `chore-logging.ts`, used by the home's load and by `rememberLastDuration`, instead of two inline queries.
 - **`DurationStepper`** uses `MIN_DURATION_MINUTES` / `MAX_DURATION_MINUTES` and a named `STEP_MINUTES`.
 - **`NO_FUTURE_CHORE_MESSAGE`** in `chore-timing.ts`, the one copy of "Pas de tâche dans le futur" for the server, the sheet and the home's toast (which adds ": change la date ou le début.").

@@ -22,10 +22,29 @@
 - **Sheet API**: `ChoreEditSheet` gained `title`, `readOnly`, `onDelete`; `onSave`/`onDelete` may return a `Promise<string | null>` (the refusal), and every close now calls `onClose` (found in the browser pass: after a save the sheet couldn't reopen on the same chore, since the page kept it as "in the sheet").
 - **Delete confirmation is the native `confirm()`**, as the prototype: one line, accessible, works inside the modal dialog.
 - **🔒 is an SVG** (`lock-closed` in `Icon.svelte`) with a screen-reader "(lecture seule)", per AGENTS.md's interface icons rule; "✎ n" stays a text badge (`badge-secondary`, `h-auto` so it never clips).
-- **Shared validation extracted from `chore-logging.ts`**: `parseNewChore`, `endsInTheFutureForTheServer` (with the 2 min clock allowance) and `findChoreTypeAndPerformer` are reused by the new `chore-editing.ts`, so creating and editing refuse the same things with the same French messages.
-- **Deactivated performers and archived types still show in the list** (joins without the active filters): their chores stay (Q2, Q10). Editing a deactivated person's chore is refused ("Personne inconnue"), as creating one; #9 can revisit when deactivation exists.
+- **Shared validation lives in `chore-validation.ts`** (moved out of `chore-logging.ts` after review): `parseChoreFields`, `endsInTheFutureForTheServer` (with the 2 min clock allowance), `findChoreTypeRefusal`, `findActivePerformer` and `choreColumnsFrom` are used by both `chore-logging.ts` and `chore-editing.ts`, so creating and editing refuse the same things with the same French messages.
+- **Deactivated performers and archived types still show in the list** (joins without the active filters): their chores stay (Q2, Q10). Editing a deactivated person's chore is allowed as long as the performer stays the same (changed after review, see below); handing a chore to a deactivated person is refused ("Personne inconnue"), as creating one.
 - **No migration**: the `(performer_user_id, started_at)` and `(started_at)` indexes from 0002 serve both queries.
+
+### After code review
+
+- **`NewChore` / `parseNewChore` renamed `ChoreFields` / `parseChoreFields`**: the type is now also the body of `?/updateChore` and the base of `HistoryChore`, so "new" was no longer true. The rename covers the outbox, the home, the edit sheet, the tests and the #5 build log.
+- **`findEditableChore` → `findChoreTheViewerMayEdit`**, with its comment fixed: it never returned null, it returns the 404/403 refusal or the chore's current type and performer.
+- **`findChoreTypeAndPerformer` split** into `findChoreTypeRefusal(db, choreTypeId, { archivedTypeAllowed })` (the French reason or null) and `findActivePerformer` (the performer or null). No more `string | performer` union.
+- **An edit may keep its chore's archived type, never move onto another archived one** ("Type de tâche archivé", 400): spec Q2 says archived types leave the picker, and Q20.5 says the server enforces what the UI hides. Creating a chore still takes an archived type (the outbox case from #5).
+- **An edit that keeps the performer doesn't re-check them**: the admin can fix the note of a deactivated person's chore (Q6 "Admin: everything"). Changing the performer still needs an active person `canLogFor` allows. Both are covered by new integration tests.
+- **`HistoryChore` carries `performerRole`** (the query already selected it), so the "Fait par" option added for a performer who isn't offered has the real role instead of a made-up `'parent'`.
+- **`deleteChore` takes `now = new Date()`**, as `updateChore` does.
+- **`choreColumnsFrom(chore)`** replaces the column map written out in both `logChore` and `updateChore`.
 
 ## Deviations from spec
 
+- **`GET /api/chores?profil=&avant=`** next to the spec's single `POST /api/chores` (Routes): Historique's next pages. Why: see Decisions. It shares the path and goes through the same profile check.
+- **A page is 50 chores plus the rest of the 50th's Paris day**, so it can hold a few more than the spec's "50 per page" (Q6). Why: a day's total is never cut by a page boundary (see Decisions).
+- **The read-only sheet says "Tu ne peux pas modifier cette tâche."** instead of the prototype's "🔒 Notée par {{ … }} : tu ne peux pas la modifier.": spec Q3 says the author is never shown, and the spec wins over the prototype.
+- **A visible "Plus ancien" button** sits on the infinite-scroll sentinel: neither the spec nor the prototype has it. Kept as the keyboard / no-IntersectionObserver fallback (accessibility basics); it only shows while there is an older page.
+
 ## Skipped review/QA findings
+
+- **Shared `PersonRef` mapping before `canEditOrDeleteChore`** (chore-editing.ts and chore-history.ts): skipped. Four lines in two places, and a helper would bring the DB column names (`performer_user_id`, `performer_role`) into the access policy, or make one server module import a row shape from another.
+- **The two `refused` helpers**: skipped. They aren't the same code: `chore-logging.ts` answers an API body (`{ status, body: { message } }`, 400/409/422), `chore-editing.ts` a form-action failure (`{ status, message }`, 400/403/404).

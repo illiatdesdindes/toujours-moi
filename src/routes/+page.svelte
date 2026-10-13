@@ -13,7 +13,7 @@
 	import DurationStepper from '#lib/components/DurationStepper.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import PendingChoreCard from '#lib/components/PendingChoreCard.svelte';
-	import type { ChoreTypeOption, NewChore } from '#lib/domain.js';
+	import type { ChoreTypeOption, ChoreFields } from '#lib/domain.js';
 	import {
 		formatParisDayAndTime,
 		fromParisDateAndTime,
@@ -33,8 +33,8 @@
 	const NO_QUICK_LOG_OVERRIDES = { open: false, date: '', time: '', note: '', performerUserId: '' };
 	let quickLogOverrides = $state({ ...NO_QUICK_LOG_OVERRIDES });
 	let now = $state(new Date());
-	let pendingChore = $state<NewChore | null>(null);
-	let choreInEditSheet = $state<NewChore | null>(null);
+	let pendingChore = $state<ChoreFields | null>(null);
+	let choreInEditSheet = $state<ChoreFields | null>(null);
 
 	const choreTypeById = (choreTypeId: string) =>
 		data.choreTypes.find((choreType) => choreType.id === choreTypeId);
@@ -68,10 +68,10 @@
 	);
 
 	/** `Vaisselle · 45 min`, `Vaisselle · 45 min · Léa` when logged for someone (prototype 02). */
-	const choreLabelFor = (chore: NewChore) =>
+	const choreLabelFor = (chore: ChoreFields) =>
 		`${choreTypeById(chore.choreTypeId)?.shortLabel} · ${formatDuration(chore.durationMinutes)}${chore.performerUserId === data.viewer.id ? '' : ` · ${performerLabelFor(chore.performerUserId)}`}`;
 
-	const commit = async (chore: NewChore, savedToastMessage: string) => {
+	const commit = async (chore: ChoreFields, savedToastMessage: string) => {
 		const choreLabel = choreLabelFor(chore);
 		const submitted = choreOutbox.submit(chore, choreLabel); // stored before this returns
 		quickLogOverrides = { ...NO_QUICK_LOG_OVERRIDES };
@@ -83,7 +83,7 @@
 				: savedToastMessage
 		);
 	};
-	const pendingChoreTimer = createPendingChore<NewChore>({
+	const pendingChoreTimer = createPendingChore<ChoreFields>({
 		commit: (chore) => void commit(chore, `✓ ${choreLabelFor(chore)} enregistré`),
 		onChange: (chore) => (pendingChore = chore)
 	});

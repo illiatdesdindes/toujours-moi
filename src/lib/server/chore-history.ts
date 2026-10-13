@@ -88,6 +88,7 @@ const toHistoryChore = (viewer: Viewer, row: HistoryRow): HistoryChore => ({
 	fullLabel: row.full_label,
 	performerName: row.performer_name,
 	performerColourKey: row.performer_colour_key,
+	performerRole: row.performer_role,
 	canEdit: canEditOrDeleteChore(viewer, {
 		performer: { id: row.performer_user_id, role: row.performer_role },
 		authorUserId: row.author_user_id

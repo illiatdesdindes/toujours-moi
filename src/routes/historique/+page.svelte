@@ -4,7 +4,7 @@
 	import { formatDuration } from '#lib/chore-timing.js';
 	import ChoreEditSheet from '#lib/components/ChoreEditSheet.svelte';
 	import HistoryChoreRow from '#lib/components/HistoryChoreRow.svelte';
-	import type { HistoryChore, HistoryPage, NewChore } from '#lib/domain.js';
+	import type { HistoryChore, HistoryPage, ChoreFields } from '#lib/domain.js';
 	import { groupChoresByParisDay } from '#lib/history-days.js';
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -94,7 +94,7 @@
 						id: chore.performerUserId,
 						name: chore.performerName,
 						colourKey: chore.performerColourKey,
-						role: 'parent' as const // ponytail: "Fait par" reads only id and name
+						role: chore.performerRole
 					},
 					...data.performerOptions
 				];
@@ -135,7 +135,7 @@
 			readOnly={!chore.canEdit}
 			choreTypes={choreTypesFor(chore)}
 			performerOptions={performerOptionsFor(chore)}
-			onSave={async (savedChore: NewChore) => {
+			onSave={async (savedChore: ChoreFields) => {
 				const refusal = await sendChoreAction('updateChore', savedChore);
 				if (!refusal) showToast('✓ Enregistré');
 				return refusal;

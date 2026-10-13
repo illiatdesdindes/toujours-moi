@@ -54,8 +54,8 @@ export type ProfileOption = {
 /** A chore type as the picker shows it (spec Q2): icon + short label, full label for `title`. */
 export type ChoreTypeOption = { id: string; shortLabel: string; fullLabel: string; icon: string };
 
-/** The body of POST /api/chores: what the quick log and the edit sheet send. */
-export type NewChore = {
+/** A chore's editable fields: the body of POST /api/chores (the quick log) and of Historique's `?/updateChore` (the edit sheet). */
+export type ChoreFields = {
 	id: string;
 	choreTypeId: string;
 	durationMinutes: number;
@@ -69,12 +69,13 @@ export type NewChore = {
 export const MAX_CHORE_NOTE_LENGTH = 200;
 
 /** One Historique row (spec Q6): the chore as the edit sheet takes it, plus what the row shows. */
-export type HistoryChore = NewChore & {
+export type HistoryChore = ChoreFields & {
 	icon: string;
 	shortLabel: string;
 	fullLabel: string;
 	performerName: string;
 	performerColourKey: ColourKey;
+	performerRole: UserRole;
 	/** The access policy's answer; false = the sheet opens read-only (🔒). */
 	canEdit: boolean;
 	/** The "✎ n" badge, admin only (spec Q6): null for everyone else. */

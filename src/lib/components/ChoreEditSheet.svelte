@@ -1,7 +1,7 @@
 <!-- The edit sheet (spec Q4, Q6): a bottom sheet on mobile, a centred modal on desktop, saved with an explicit "Enregistrer". The home's Modifier opens it on the pending chore, Historique on a saved one (with Supprimer, or read-only when the access policy forbids editing). -->
 <script lang="ts">
 	import { endsInTheFuture, NO_FUTURE_CHORE_MESSAGE } from '#lib/chore-timing.js';
-	import type { ChoreTypeOption, NewChore, User } from '#lib/domain.js';
+	import type { ChoreTypeOption, ChoreFields, User } from '#lib/domain.js';
 	import { fromParisDateAndTime, toParisDateAndTime } from '#lib/paris-time.js';
 	import ChoreTypePicker from './ChoreTypePicker.svelte';
 	import ChoreDetailsFields from './ChoreDetailsFields.svelte';
@@ -19,7 +19,7 @@
 		onClose
 	}: {
 		/** Copied into the form when the sheet opens; key the sheet on it. */
-		chore: NewChore;
+		chore: ChoreFields;
 		title: string;
 		choreTypes: ChoreTypeOption[];
 		/** "Fait par" (spec Q3): shown when there is a choice. */
@@ -27,7 +27,7 @@
 		/** 🔒 (spec Q6): shown, not editable; no Enregistrer nor Supprimer. */
 		readOnly?: boolean;
 		/** A French reason it wasn't saved keeps the sheet open with it; nothing closes it. */
-		onSave: (chore: NewChore) => void | Promise<string | null>;
+		onSave: (chore: ChoreFields) => void | Promise<string | null>;
 		/** A saved chore's Supprimer, after "Supprimer cette tâche ?" (spec Q6). Same answer as onSave. */
 		onDelete?: () => Promise<string | null>;
 		/** Closed, saved or not (✕, Échap, the backdrop, after a save or a delete): unmount the sheet. */

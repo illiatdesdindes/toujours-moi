@@ -3,7 +3,7 @@
 // server has it. Retried on `online`, on reopening the app and on the next quick log; the server's
 // POST /api/chores is idempotent by the browser-made id, so sending twice is harmless.
 
-import type { NewChore } from './domain';
+import type { ChoreFields } from './domain';
 
 export type SendOutcome = 'saved' | 'retry' | { rejected: string };
 
@@ -13,7 +13,7 @@ export const CHORE_OUTBOX_STORAGE_KEY = 'tjm.chore-outbox.v1';
  * Who logged each chore: on a shared browser, a chore is only ever sent as its own author.
  * `choreLabel` (`Vaisselle · 45 min`) names it if it's refused on a later visit; optional, older entries lack it.
  */
-type OutboxEntry = { viewerId: string; chore: NewChore; choreLabel?: string | undefined };
+type OutboxEntry = { viewerId: string; chore: ChoreFields; choreLabel?: string | undefined };
 
 export const createChoreOutbox = ({
 	storage,
@@ -23,9 +23,9 @@ export const createChoreOutbox = ({
 }: {
 	storage: Pick<Storage, 'getItem' | 'setItem'>;
 	viewerId: string;
-	send: (chore: NewChore) => Promise<SendOutcome>;
+	send: (chore: ChoreFields) => Promise<SendOutcome>;
 	/** The server refused it for good (e.g. a future chore): dropped, never retried. */
-	onRejected: (chore: NewChore, message: string, choreLabel: string | undefined) => void;
+	onRejected: (chore: ChoreFields, message: string, choreLabel: string | undefined) => void;
 }) => {
 	// Read on every use: another tab may have changed it.
 	const readEntries = (): OutboxEntry[] => {
@@ -60,7 +60,7 @@ export const createChoreOutbox = ({
 		unsentChores,
 		retry,
 		/** Resolves to true when the chore still waits in the outbox (offline), false once sent or refused. */
-		async submit(chore: NewChore, choreLabel?: string) {
+		async submit(chore: ChoreFields, choreLabel?: string) {
 			writeEntries([...readEntries(), { viewerId, chore, choreLabel }]);
 			await retry();
 			return unsentChores().some((unsent) => unsent.id === chore.id);
@@ -77,7 +77,7 @@ const REJECTED_STATUSES = new Set([400, 404, 409, 422]);
 
 /** Sends one chore. 403, 429, 5xx, a network failure or a page that isn't ours (Access's login) → retry. */
 export const sendChoreToServer = async (
-	chore: NewChore,
+	chore: ChoreFields,
 	fetchChore: typeof fetch = fetch
 ): Promise<SendOutcome> => {
 	try {
