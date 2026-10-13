@@ -7,6 +7,8 @@
 	import { page } from '$app/state';
 	import { setChoreOutbox, setShowToast } from '#lib/app-context.js';
 	import { createChoreOutbox, localStorageOrMemory, sendChoreToServer } from '#lib/chore-outbox.js';
+	import { formatDuration } from '#lib/chore-timing.js';
+	import { formatParisDayAndTime } from '#lib/paris-time.js';
 	import { onMount } from 'svelte';
 
 	let { data, children } = $props();
@@ -27,7 +29,11 @@
 			storage: localStorageOrMemory(),
 			viewerId: data.viewer.id,
 			send: (chore) => sendChoreToServer(chore),
-			onRejected: (_chore, message) => showToast(`Tâche non enregistrée : ${message}`)
+			// Often on a later visit, so it names the chore to log again.
+			onRejected: (chore, message, choreLabel) =>
+				showToast(
+					`${choreLabel ?? `Tâche de ${formatDuration(chore.durationMinutes)}`} (${formatParisDayAndTime(new Date(chore.startedAt), new Date())}) non enregistrée : ${message}`
+				)
 		})
 	);
 	// Spec Q20 point 1: retried on `online` and on the app reopening (a reload, or back from the background).
@@ -103,11 +109,11 @@
 		</main>
 	</div>
 
-	<!-- Always in the page, so screen readers hear each new message. -->
+	<!-- Always in the page, so screen readers hear each new message. Sits above the pending card when one shows (it sets the offset), never over its buttons. -->
 	<div role="status">
 		{#if toastMessage}
 			<p
-				class="fixed inset-x-3 bottom-20 z-30 rounded-box bg-neutral p-3 text-sm text-neutral-content pop-edge md:right-6 md:bottom-6 md:left-auto md:w-96"
+				class="fixed inset-x-3 bottom-[calc(5rem+var(--pending-chore-card-offset,0px))] z-30 rounded-box bg-neutral p-3 text-sm text-neutral-content pop-edge md:right-6 md:bottom-[calc(1.5rem+var(--pending-chore-card-offset,0px))] md:left-auto md:w-96"
 			>
 				{toastMessage}
 			</p>

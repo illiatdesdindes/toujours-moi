@@ -17,9 +17,34 @@
 		onEdit: () => void;
 		onCancel: () => void;
 	} = $props();
+
+	let cardHeight = $state(0);
+	// The toast stacks above the card instead of covering Modifier / Annuler (layout's toast reads it).
+	$effect(() => {
+		const root = document.documentElement.style;
+		root.setProperty('--pending-chore-card-offset', `${cardHeight + 8}px`);
+		return () => root.removeProperty('--pending-chore-card-offset');
+	});
+
+	// A keyboard pick moves focus to Modifier, or Tab couldn't reach the card within 5 s (WCAG 2.2.1).
+	// A touch or mouse pick leaves focus alone; the tile is refocused once the card is gone.
+	let cardElement: HTMLDivElement;
+	let editButton: HTMLButtonElement;
+	$effect(() => {
+		const pickedTile = document.activeElement;
+		if (!(pickedTile instanceof HTMLElement && pickedTile.matches(':focus-visible'))) return;
+		editButton.focus();
+		return () => {
+			const focusIsLost =
+				document.activeElement === document.body || cardElement.contains(document.activeElement);
+			if (focusIsLost && pickedTile.isConnected) pickedTile.focus();
+		};
+	});
 </script>
 
 <div
+	bind:this={cardElement}
+	bind:clientHeight={cardHeight}
 	class="fixed inset-x-3 bottom-20 z-20 overflow-hidden rounded-box bg-primary text-primary-content pop-edge md:right-6 md:bottom-6 md:left-auto md:w-96"
 	role="region"
 	aria-label="Tâche en attente"
@@ -30,8 +55,18 @@
 			<p class="font-bold">{summary}</p>
 			<p class="opacity-80">{dayAndTime}</p>
 		</div>
-		<button type="button" class="btn btn-sm" onclick={onEdit}>Modifier</button>
-		<button type="button" class="btn btn-sm" onclick={onCancel}>Annuler</button>
+		<!-- The global focus ring is navy, like the card until #6 tints primary. -->
+		<button
+			bind:this={editButton}
+			type="button"
+			class="btn btn-sm focus-visible:outline-primary-content"
+			onclick={onEdit}>Modifier</button
+		>
+		<button
+			type="button"
+			class="btn btn-sm focus-visible:outline-primary-content"
+			onclick={onCancel}>Annuler</button
+		>
 	</div>
 	<div class="h-1.5 bg-primary-content/30">
 		<div

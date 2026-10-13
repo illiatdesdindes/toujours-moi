@@ -29,12 +29,13 @@ const outboxWith = (outcomes: SendOutcome[], storage = memoryStorage(), viewerId
 	const send = vi.fn<(chore: NewChore) => Promise<SendOutcome>>(
 		async () => outcomes.shift() ?? 'saved'
 	);
-	const rejected: [string, string][] = [];
+	const rejected: [string, string, string | undefined][] = [];
 	const outbox = createChoreOutbox({
 		storage,
 		viewerId,
 		send,
-		onRejected: (rejectedChore, message) => rejected.push([rejectedChore.id, message])
+		onRejected: (rejectedChore, message, choreLabel) =>
+			rejected.push([rejectedChore.id, message, choreLabel])
 	});
 	return { outbox, send, rejected, storage };
 };
@@ -74,11 +75,17 @@ describe('chore outbox', () => {
 		expect(outbox.unsentChores()).toEqual([]);
 	});
 
-	it('drops a chore the server refuses, and says so', async () => {
+	it('drops a chore the server refuses, and says which one', async () => {
 		const { outbox, rejected } = outboxWith([{ rejected: 'Pas de tâche dans le futur' }]);
-		await outbox.submit(chore('a'));
+		expect(await outbox.submit(chore('a'), 'Vaisselle · 45 min')).toBe(false);
 		expect(outbox.unsentChores()).toEqual([]);
-		expect(rejected).toEqual([['a', 'Pas de tâche dans le futur']]);
+		expect(rejected).toEqual([['a', 'Pas de tâche dans le futur', 'Vaisselle · 45 min']]);
+	});
+
+	it('tells the caller when the chore still waits for the network', async () => {
+		const { outbox } = outboxWith(['retry', 'saved']);
+		expect(await outbox.submit(chore('a'))).toBe(true);
+		expect(await outbox.submit(chore('b'))).toBe(false);
 	});
 
 	it("never sends another viewer's chores", async () => {

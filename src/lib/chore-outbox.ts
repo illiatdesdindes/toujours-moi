@@ -9,8 +9,11 @@ export type SendOutcome = 'saved' | 'retry' | { rejected: string };
 
 export const CHORE_OUTBOX_STORAGE_KEY = 'tjm.chore-outbox.v1';
 
-/** Who logged each chore: on a shared browser, a chore is only ever sent as its own author. */
-type OutboxEntry = { viewerId: string; chore: NewChore };
+/**
+ * Who logged each chore: on a shared browser, a chore is only ever sent as its own author.
+ * `choreLabel` (`Vaisselle · 45 min`) names it if it's refused on a later visit; optional, older entries lack it.
+ */
+type OutboxEntry = { viewerId: string; chore: NewChore; choreLabel?: string | undefined };
 
 export const createChoreOutbox = ({
 	storage,
@@ -22,7 +25,7 @@ export const createChoreOutbox = ({
 	viewerId: string;
 	send: (chore: NewChore) => Promise<SendOutcome>;
 	/** The server refused it for good (e.g. a future chore): dropped, never retried. */
-	onRejected: (chore: NewChore, message: string) => void;
+	onRejected: (chore: NewChore, message: string, choreLabel: string | undefined) => void;
 }) => {
 	// Read on every use: another tab may have changed it.
 	const readEntries = (): OutboxEntry[] => {
@@ -37,18 +40,16 @@ export const createChoreOutbox = ({
 		storage.setItem(CHORE_OUTBOX_STORAGE_KEY, JSON.stringify(entries));
 	const removeOutboxEntry = (choreId: string) =>
 		writeEntries(readEntries().filter((entry) => entry.chore.id !== choreId));
-	const unsentChores = () =>
-		readEntries()
-			.filter((entry) => entry.viewerId === viewerId)
-			.map((entry) => entry.chore);
+	const viewerEntries = () => readEntries().filter((entry) => entry.viewerId === viewerId);
+	const unsentChores = () => viewerEntries().map((entry) => entry.chore);
 
 	/** One pass, oldest first; stops at the first chore that can't be sent yet (offline). */
 	const sendUnsent = async () => {
-		for (const chore of unsentChores()) {
+		for (const { chore, choreLabel } of viewerEntries()) {
 			const outcome = await send(chore);
 			if (outcome === 'retry') return;
 			removeOutboxEntry(chore.id);
-			if (outcome !== 'saved') onRejected(chore, outcome.rejected);
+			if (outcome !== 'saved') onRejected(chore, outcome.rejected, choreLabel);
 		}
 	};
 	// Passes never overlap, so a chore isn't sent twice at once.
@@ -58,9 +59,11 @@ export const createChoreOutbox = ({
 	return {
 		unsentChores,
 		retry,
-		submit(chore: NewChore) {
-			writeEntries([...readEntries(), { viewerId, chore }]);
-			return retry();
+		/** Resolves to true when the chore still waits in the outbox (offline), false once sent or refused. */
+		async submit(chore: NewChore, choreLabel?: string) {
+			writeEntries([...readEntries(), { viewerId, chore, choreLabel }]);
+			await retry();
+			return unsentChores().some((unsent) => unsent.id === chore.id);
 		}
 	};
 };

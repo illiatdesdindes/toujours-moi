@@ -51,21 +51,37 @@
 		`${formatParisDayAndTime(startedAtFor(now), now)} · Moi${quickLogOverrides.note.trim() ? ' · 📝' : ''}`
 	);
 
-	const commit = (chore: NewChore) => {
-		void choreOutbox.submit(chore);
+	/** `Vaisselle · 45 min` */
+	const choreLabelFor = (chore: NewChore) =>
+		`${choreTypeById(chore.choreTypeId)?.shortLabel} · ${formatDuration(chore.durationMinutes)}`;
+
+	const commit = async (chore: NewChore, savedToastMessage: string) => {
+		const choreLabel = choreLabelFor(chore);
+		const submitted = choreOutbox.submit(chore, choreLabel); // stored before this returns
 		quickLogOverrides = { open: false, date: '', time: '', note: '' };
+		const isWaitingForNetwork = await submitted;
+		// Never "enregistré" while it only sits in this browser.
+		showToast(
+			isWaitingForNetwork
+				? `⏳ ${choreLabel} en attente du réseau : envoyée dès son retour`
+				: savedToastMessage
+		);
 	};
 	const pendingChoreTimer = createPendingChore<NewChore>({
-		commit: (chore) => {
-			commit(chore);
-			const choreType = choreTypeById(chore.choreTypeId);
-			showToast(`✓ ${choreType?.shortLabel} · ${formatDuration(chore.durationMinutes)} enregistré`);
-		},
+		commit: (chore) => void commit(chore, `✓ ${choreLabelFor(chore)} enregistré`),
 		onChange: (chore) => (pendingChore = chore)
 	});
 
+	/** A second tap on the same tile this soon is a double tap or a bounce, not a second chore. */
+	const DOUBLE_TAP_MS = 600;
+	let lastPick = { choreTypeId: '', at: 0 };
+
 	const logChoreType = (choreType: ChoreTypeOption) => {
 		const tappedAt = new Date();
+		const isDoubleTap =
+			lastPick.choreTypeId === choreType.id && tappedAt.getTime() - lastPick.at < DOUBLE_TAP_MS;
+		lastPick = { choreTypeId: choreType.id, at: tappedAt.getTime() };
+		if (isDoubleTap && pendingChoreTimer.current) return;
 		const startedAt = startedAtFor(tappedAt);
 		if (endsInTheFuture(startedAt, durationMinutes, tappedAt)) {
 			showToast(`${NO_FUTURE_CHORE_MESSAGE} : change la date ou le début.`);
@@ -122,7 +138,7 @@
 					glyph="chevron-right"
 					class={['size-4 transition', quickLogOverrides.open && 'rotate-90']}
 				/>
-				<span class="first-letter:uppercase">{quickLogOverridesSummary}</span>
+				<span>{quickLogOverridesSummary}</span>
 			</summary>
 			<div class="space-y-2 border-t-2 border-base-content p-3">
 				<ChoreWhenAndNoteFields
@@ -142,7 +158,7 @@
 	{#key pendingChore.id}
 		<PendingChoreCard
 			icon={choreType?.icon ?? ''}
-			summary={`${choreType?.shortLabel} · ${formatDuration(pendingChore.durationMinutes)}`}
+			summary={choreLabelFor(pendingChore)}
 			dayAndTime={formatParisDayAndTime(new Date(pendingChore.startedAt), now)}
 			onEdit={() => (choreInEditSheet = pendingChoreTimer.takeForEdit())}
 			onCancel={pendingChoreTimer.cancel}
@@ -157,8 +173,7 @@
 			choreTypes={data.choreTypes}
 			onSave={(chore) => {
 				choreInEditSheet = null;
-				commit(chore);
-				showToast('✓ Enregistré'); // the prototype's saveSheet
+				void commit(chore, '✓ Enregistré'); // the prototype's saveSheet
 			}}
 			onClose={() => (choreInEditSheet = null)}
 		/>

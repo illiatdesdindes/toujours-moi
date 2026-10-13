@@ -19,6 +19,14 @@
 		/** The edit sheet's; the home leaves them empty for "now − duration". */
 		required?: boolean;
 	} = $props();
+
+	// The pickers allow any minute; snap to the quarter (as Q4's derived start) so the home and the
+	// sheet agree, rather than the sheet blocking on a browser bubble and the home saving 00:07.
+	const floorTimeToQuarter = (wallTime: string) => {
+		const [hours, minutes] = wallTime.split(':');
+		if (minutes === undefined) return wallTime;
+		return `${hours}:${String(Math.floor(Number(minutes) / 15) * 15).padStart(2, '0')}`;
+	};
 </script>
 
 <div class="grid grid-cols-2 gap-2 text-sm">
@@ -37,6 +45,7 @@
 			step="900"
 			class="input w-full input-sm"
 			bind:value={time}
+			onchange={() => (time = floorTimeToQuarter(time))}
 			{required}
 		/></label
 	>
