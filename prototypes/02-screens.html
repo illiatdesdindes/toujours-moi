@@ -76,7 +76,7 @@
 	<div v-if="state.simulateNotInstalled && state.viewport === 'phone'" class="flex h-full flex-col items-center justify-center gap-5 p-8 text-center">
 		<div class="pop-edge grid size-24 place-items-center rounded-3xl bg-secondary text-4xl font-black">TJM</div>
 		<h2 class="text-2xl font-bold">Installe TJM</h2>
-		<p>TJM s'utilise comme une application. Installe-la sur ton téléphone pour noter tes tâches en deux taps et recevoir les notifications.</p>
+		<p>Vaisselle, lessive, poubelles… <b>Toujours Moi!</b> compte qui s'en occupe à la maison. Installe-la sur ton téléphone pour noter tes tâches ménagères en deux clics, et recevoir une notification quand quelqu'un en note une.</p>
 		<button class="btn btn-primary btn-lg w-full" @click="state.simulateNotInstalled = false">Installer TJM</button>
 		<p class="text-sm opacity-70">Pas de bouton ? Menu <b>⋮</b> du navigateur → <b>Installer l'application</b>.</p>
 	</div>
@@ -131,7 +131,7 @@
 					</div>
 				</div>
 				<div>
-					<p class="text-sm font-semibold opacity-70">Quoi ? <span class="font-normal">(un tap enregistre)</span></p>
+					<p class="text-sm font-semibold opacity-70">Quoi ? <span class="font-normal">(un clic enregistre)</span></p>
 					<div class="mt-2 grid grid-cols-4 gap-2 @3xl:grid-cols-6">
 						<button v-for="choreType in activeChoreTypes" :key="choreType.key"
 							class="pop-edge relative flex flex-col items-center justify-center gap-1 overflow-hidden rounded-box bg-base-200 p-2 transition active:scale-95"

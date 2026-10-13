@@ -61,7 +61,7 @@
 <div id="app" v-cloak class="p-4 md:p-8">
 	<header class="mx-auto mb-6 max-w-6xl">
 		<h1 class="text-2xl font-bold">TJM · prototype 01 : thème</h1>
-		<p class="text-sm opacity-70">Les trois écrans d'accueil sont fonctionnels : durée, tap sur un type, carte en attente 5 s (Modifier / Annuler). Choisis une couleur perso sous chaque téléphone pour voir comment elle teinte l'app.</p>
+		<p class="text-sm opacity-70">Les trois écrans d'accueil sont fonctionnels : durée, clic sur un type, carte en attente 5 s (Modifier / Annuler). Choisis une couleur perso sous chaque téléphone pour voir comment elle teinte l'app.</p>
 		<label class="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" class="toggle toggle-sm" v-model="iconOnly" /> Types en icône seule</label>
 	</header>
 
@@ -95,7 +95,7 @@
 						</div>
 
 						<!-- types -->
-						<p class="text-sm font-semibold opacity-70">Quoi ? <span class="font-normal">(un tap enregistre)</span></p>
+						<p class="text-sm font-semibold opacity-70">Quoi ? <span class="font-normal">(un clic enregistre)</span></p>
 						<div class="mt-2 grid grid-cols-4 gap-2">
 							<button v-for="choreType in choreTypes" :key="choreType.key"
 								class="pop-edge flex flex-col items-center justify-center gap-1 rounded-box bg-base-200 p-2 transition active:scale-95"
