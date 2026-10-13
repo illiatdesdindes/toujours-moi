@@ -1,0 +1,42 @@
+# #10 Web Push notifications
+
+## Acceptance criteria
+
+The ticket's "Done when" plus its "What" items.
+
+- [x] `push_subscriptions`, one row per device: migration `0003_push_subscriptions.sql` (`id` UUID v7, `user_id`, `endpoint` UNIQUE, `p256dh`, `auth`, `created_at`), additive.
+- [x] Réglages: "Notifications sur cet appareil" toggle + Tester in Mon profil (`DeviceNotificationsToggle.svelte`, prototype 02's row), through `POST`/`DELETE /reglages/notifications` and `POST /reglages/notifications/test` (notakid's routes and page logic).
+- [x] On chore creation only (`POST /api/chores` answering 201), sent with `waitUntil` after the commit; a retry (200), an edit or a delete sends nothing.
+- [x] Recipients per the Q11 matrix: never the author; admin and parents any chore; a child for a chore logged for them or done by another child. Deactivated users get nothing.
+- [x] French texts, `tag` per performer (`performer:<id>`), tap → Historique on the performer's profile, `badge: /icon-badge-96.png` (the PNG of `design/logo/tjm-notification-badge.svg`, made by #11).
+- [x] 404/410 → subscription deleted; other failures logged (push service host and status only), not retried.
+- [x] Unit tests for recipients: `src/lib/server/chore-notifications.test.ts` (the matrix, author never, texts, tap URLs).
+- [x] Integration test with a fake push endpoint: `test/chore-notifications.test.ts` (encrypted aes128gcm + VAPID headers, TTL 24 h, the matrix end to end, several devices, a device changing hands, 404/410 deletes, 503 logged and kept with no retry, nothing on retry / edit / delete, deactivated users skipped, toggle on/off and its validation, Tester own device / someone else's / unsubscribed).
+- [x] Browser pass (`npm run dev`, Papa, 1280 px and 390 px): denied state and its hint; toggle on → subscription row saved for Papa; Tester → toast; toggle off → row deleted; a quick-logged chore as Papa tried exactly one push (Maman's device, not the author's). No horizontal scroll at 390 px. See Decisions for what an automated browser can't do.
+- [x] `npm run lint && npm run check && npm test` green.
+
+## Decisions
+
+- **`waitUntil` from `cloudflare:workers`, not `platform.context.waitUntil`** (the spec's wording): adapter-cloudflare 8 / Kit 3 passes no `platform` at all (its `worker.js` calls `server.respond` with no platform, and the app already reads `env` from `cloudflare:workers`). Same effect: the push runs after the answer, inside the request's lifetime. Consequence for tests: `waitOnExecutionContext` doesn't wait for it, so the integration test polls (`expect.poll`) for pushes, and for "nothing was pushed" waits 200 ms first (`settle()`).
+- **Recipients and texts are a pure module** (`src/lib/server/chore-notifications.ts`), the DB + push side in `chore-notification-sending.ts`, the subscription rows in `push-subscriptions.ts`. Not in `access-policy.ts`: who is notified isn't a permission, and the spec lists "notification recipients" as its own unit test.
+- **Texts**: title "Léa · Vaisselle", body "45 min · aujourd'hui, 14:15". Logged for the recipient: title "Papa a noté pour toi", body "Vaisselle · 45 min · aujourd'hui, 14:15". The spec writes the latter as one line ("Papa a noté pour toi : Vaisselle · 45 min"); prototype 02's `sendNotifications` splits it into title and body like this, and a push has both fields, so I followed the prototype. The day and time come from the app's `formatParisDayAndTime` (with a comma, as the pending card and prototype's `formatDayTime`), computed when sent.
+- **Tap URL per recipient**: Historique on the performer's profile when the recipient may view it (`canViewProfile`); else Famille when they may see it (a parent, for the other parent's chore: `?profil=<other parent>` would be a 403); else the recipient's own Historique (a child told about another child's chore). Built with `profileParamFor`, so the recipient's own profile has no `?profil=`.
+- **`renotify: true`** on the notification: with one tag per performer, a second chore by the same person would otherwise replace the first silently. Not in notakid. `badge` is the existing `static/icon-badge-96.png`, `icon` the 192 px app icon.
+- **VAPID subject `https://tjm.samyv.com`**: notakid uses `mailto:OWNER_EMAIL`; TJM has no owner email setting, and an https URL is a valid subject. A constant, not config.
+- **VAPID keys are `bindings.secret()`** in `cloudflare.config.ts` (as notakid); tests use notakid's test-only pair in `vite.config.ts`; `.dev.vars.example` documents a local pair and the command that prints one (I generated one in my `.dev.vars`). **Side effect found in the browser pass**: once any secret is declared, `vite dev` loads only the declared ones from `.dev.vars`, so `DEV_VIEWER_EMAIL` vanished and every page answered 403. Fixed by declaring `DEV_VIEWER_EMAIL: bindings.secret()` in development mode only (comment in the config). Production never sees it.
+- **For #12 (production)**: set `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` once this change is on `main` (notakid docs/deploy.md: `cf deploy` deletes undeclared secrets, and a deploy fails until declared ones are set). A new pair breaks every subscription.
+- **Subscription row**: a device belongs to whoever subscribed it last (`ON CONFLICT (endpoint) DO UPDATE SET user_id`, as notakid), and the page re-saves it on each Réglages visit. Not versioned: it isn't family data (spec Q7 lists the versioned tables). `user_id` references `users`; the tests' `resetFamily` deletes subscriptions first.
+- **Delivery outcomes `sent | expired | failed`**: notakid's `retry` / `rejected` split existed for its cron retry; TJM doesn't retry (spec Q20 point 3), so both are `failed`, logged. Tester answers 204 / 410 / 502 as notakid; any failure toasts "Pas envoyée : désactive puis réactive les notifications", success "🔔 Notification de test envoyée" (prototype 02).
+- **Tester stays visible, disabled while off** (prototype 02), where notakid hides it. Toggle errors go to the shared toast (the app's pattern), with the offline wording Réglages already uses. The toggle sits below Mon profil's Enregistrer, after a divider: it saves on tap, and inside the form it would read as part of what Enregistrer saves.
+- **Unsupported / denied hints** in the tu-form the app uses: "Ce navigateur ne reçoit pas les notifications : utilise Chrome, Firefox ou Edge, sur ordinateur ou Android." / "Notifications refusées : autorise-les dans les réglages du navigateur." (notakid's, from vous to tu; iPhone isn't supported, spec Q12).
+- **Browser pass limits**: the automated Chrome answers `denied` to the permission request, and CDP `Browser.grantPermissions` / `setPermission` didn't change it. So I checked the denied state as is, then replaced `Notification.permission`, `requestPermission` and `PushManager.subscribe/getSubscription` in the page with fakes (a real P-256 key, endpoint `https://push.example/…`) to drive the toggle, Tester and a quick log against the real server; the push itself fails there (no such host), which the dev log shows as `Push failed push.example`. The service worker's `push` / `notificationclick` handlers (copied from notakid) weren't run in a browser: showing a notification needs the permission. A real check needs a hand-held Chrome, as notakid's deploy.md says.
+- **Formatting**: `prettier --write` also re-wrapped one line of #11's `InstallScreen.svelte` (no logic change).
+- Local D1: `npm run db:migrate:local` applied 0003; the browser pass's chore and subscription rows were removed afterwards; `DEV_VIEWER_EMAIL` unchanged (Papa).
+
+## Deviations from spec
+
+None. (`waitUntil` comes from `cloudflare:workers` instead of `platform.context`, which this adapter version doesn't provide; same behaviour, see Decisions.)
+
+## Skipped review/QA findings
+
+None yet (review runs after this).

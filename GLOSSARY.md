@@ -82,3 +82,14 @@ brackets when there is one.
   (`beforeinstallprompt`, `install-prompt.ts`) when Chrome offers one.
 - **App shell**: the built JS/CSS and `static/`, cached by the service worker per deploy
   (`src/service-worker/index.ts`), with the last copy of each page for offline.
+
+## Notifications
+
+- **Push subscription**: one browser's Web Push subscription (`push_subscriptions`, one row per
+  device), made by Réglages' "Notifications sur cet appareil" toggle (`DeviceNotificationsToggle.svelte`,
+  `push-subscriptions.ts`). It belongs to whoever subscribed the device last; a 404/410 from the
+  push service deletes it.
+- **Chore notification**: the push a new chore sends to its **recipients** (spec Q11): never its
+  author, every grown-up, a child when it was logged for them or done by another child
+  (`chore-notifications.ts`). Sent once, on creation, after the commit (`chore-notification-sending.ts`);
+  edits and deletes send nothing. One `tag` per performer.

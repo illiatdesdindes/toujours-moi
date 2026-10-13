@@ -37,6 +37,9 @@ export default defineConfig(({ mode }) => {
 				// Local: `.dev.vars`; tests: vite.config.ts; production: secrets set by #12.
 				VAPID_PUBLIC_KEY: bindings.secret(),
 				VAPID_PRIVATE_KEY: bindings.secret(),
+				// Declaring any secret makes `vite dev` load only the declared ones from `.dev.vars`, so the
+				// local viewer (hooks.server.ts) is declared too, in development only.
+				...(mode === 'development' && { DEV_VIEWER_EMAIL: bindings.secret() }),
 				// Per Viewer, per Cloudflare location, approximate: stops a looping client, not a precise quota.
 				// Namespace 1002: notakid (same account) has 1001, and a shared namespace would share the counter.
 				VIEWER_RATE_LIMIT: bindings.rateLimit({
