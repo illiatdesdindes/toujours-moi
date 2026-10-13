@@ -37,6 +37,15 @@
 - **An explicit "Fait par" pick resets when the profile on screen changes** (an `$effect` on `data.selectedProfileParam` on the home), since SvelteKit keeps the page component across `?profil=` changes; otherwise Léa's page would log for Noé. Options weighed: keying the whole page on the profile (also resets duration and date/time overrides, more than needed). Checked in the browser: Noé picked, switch to Léa → "· Léa", select back on "(par défaut)".
 - **Glossary "Family profile"** now names what the code says (`{ kind: 'family' }`, `FAMILY_PROFILE_PARAM`) rather than an identifier that never existed; renaming the code to `familyProfile` would make `kind: 'familyProfile'` read worse next to `kind: 'person'`.
 
+### QA round
+
+- **Error copy keys on "unmatched URL", not on 404**: `+error.svelte` swaps in "Cette page n'existe pas." only when `page.route.id === null` (SvelteKit's English "Not Found"); every other error shows its own message, so `?profil=nobody` reads "Profil introuvable". The layout title follows the same test: "Page introuvable" for an unmatched URL, "Erreur" for any other error.
+- **An error page is no tab**: `currentTab` is undefined whenever `page.error` is set, since a profile 403/404 keeps its route id. The title is "Erreur · TJM", no dock/sidebar tab is highlighted and the switcher is hidden.
+- **Active dock tab = a `bg-primary text-primary-content` pill** (like the sidebar's `btn-primary`), instead of the prototype's `text-primary` on base-200, which fails AA for 5 of the 8 personal colours (mustard 1.97:1). The primary/content pairs are contrast-checked (5.2 to 7.6). Options weighed: navy label with a primary underline only (the bar itself still under 3:1 for mustard); darkening the 5 light colours (changes the spec's palette).
+- **Switcher button focus ring in `primary-content`**: it sits on the tinted header, where navy is under 3:1 on tomato/cornflower/raspberry; primary-content passes on every colour by construction.
+- **Menu items get an inset 2px ring in their text colour** (`outline-current`, offset -4px, `outline-solid` to beat daisyUI's `--tw-outline-style: none`): navy on plain rows, light on the selected navy row. Checked in the browser at 390 px.
+- **Colour dot ring is `border-current`**, so it stays light on the selected (navy) row and navy elsewhere.
+
 ## Deviations from spec
 
 - **Q8 "Home: the selected person is the default performer"**: when the admin views Maman (or anyone they may not log for, per Q3's `canLogFor`), the default performer is the admin, not Maman. Q3's who-may-log-for-whom wins over Q8's default; see Decisions. Spec owner to confirm.
@@ -46,3 +55,4 @@
 - **`historique` / `rapports` `+page.server.ts` identical**: both are stubs returning the profile header (now one line each). #7 and #8 grow them apart; a shared helper now would be speculative.
 - **`PERSONAL_COLOURS` hex pairs in `domain.ts`**: the per-person colour is picked at runtime from the selected profile (`--color-primary` set inline on the layout, the dot's background), so it has to be readable from TS; moving it to 8 CSS rules keyed by a `data-` attribute would split the same 8 values between CSS and the `COLOUR_KEYS` list anyway. Kept, as already decided above.
 - **403/404 pages and their copy not in the spec**: noted by the reviewer as a reasonable reading, not a defect; kept (see Decisions).
+- **QA: active dock tab on the prototype (02-screens) also uses `text-primary`**: fixed in the app only; the prototype is a reference, not shipped.

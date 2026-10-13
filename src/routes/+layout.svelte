@@ -65,8 +65,10 @@
 		}[]
 	).map((tab) => ({ ...tab, href: resolve(tab.routeId) }));
 	type Tab = (typeof tabs)[number];
-	// resolve() gives relative hrefs, so match on the route instead.
-	const currentTab = $derived(tabs.find((tab) => tab.routeId === page.route.id));
+	// resolve() gives relative hrefs, so match on the route instead. An error page (a profile 403/404 keeps its route id) is no tab.
+	const currentTab = $derived(
+		page.error ? undefined : tabs.find((tab) => tab.routeId === page.route.id)
+	);
 
 	// Spec Q8: `?profil=` is kept across Accueil / Historique / Rapports; leaving it out means yourself.
 	// Taken from the load, not the URL: a 403/404 page has none, so its tabs lead back out.
@@ -85,7 +87,8 @@
 	);
 	// Off-tab routes are only the error page for now.
 	const pageTitle = $derived(
-		currentTab?.label ?? (page.status === 404 ? 'Page introuvable' : 'Erreur')
+		currentTab?.label ??
+			(page.status === 404 && page.route.id === null ? 'Page introuvable' : 'Erreur')
 	);
 </script>
 
@@ -155,11 +158,12 @@
 		{/if}
 	</div>
 
+	<!-- The active tab is a primary pill like the sidebar's: text-primary on base-200 fails contrast for most personal colours. -->
 	<nav class="dock border-t-2 border-base-content bg-base-200 md:hidden">
 		{#each tabs as tab (tab.href)}
 			<a
 				href={tabHref(tab, selectedProfileParam)}
-				class={{ 'dock-active text-primary': tab === currentTab }}
+				class={{ 'dock-active bg-primary text-primary-content': tab === currentTab }}
 				aria-current={tab === currentTab ? 'page' : undefined}
 			>
 				<Icon glyph={tab.glyph} class="size-6" /><span class="dock-label">{tab.label}</span>

@@ -1,4 +1,4 @@
-<!-- The profile switcher (spec Q8): the header's dropdown on Accueil / Historique / Rapports, each option a link carrying `?profil=`. A native popover, so outside clicks and Échap close it. -->
+<!-- The profile switcher (spec Q8): the header's dropdown on Accueil / Historique / Rapports, each option a link carrying `?profil=`. A native popover, so outside clicks and Échap close it. The button's focus ring sits on the tinted header, so it takes primary-content; the items get an inset ring in their text colour (daisyUI's focus fill is near invisible). -->
 <script lang="ts">
 	import type { ProfileOption } from '#lib/domain.js';
 	import type { ResolvedPathname } from '$app/types';
@@ -32,7 +32,7 @@
 
 <button
 	type="button"
-	class="btn max-w-48 bg-base-100 font-semibold text-base-content btn-sm"
+	class="btn max-w-48 bg-base-100 font-semibold text-base-content btn-sm focus-visible:outline-primary-content"
 	popovertarget={popoverId}
 	style:anchor-name="--{popoverId}"
 	aria-label="Profil affiché : {selectedOption.label}"
@@ -51,7 +51,10 @@
 		<li>
 			<a
 				href={hrefFor(option.profileParam)}
-				class={{ 'menu-active': isSelected }}
+				class={[
+					'focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-current focus-visible:outline-solid',
+					{ 'menu-active': isSelected }
+				]}
 				aria-current={isSelected ? 'page' : undefined}
 				onclick={() => popover.hidePopover()}>{@render optionLabel(option)}</a
 			>
