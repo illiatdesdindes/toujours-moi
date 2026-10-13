@@ -62,7 +62,7 @@ Chores performed by one person and logged by another are called "logged for" bel
 - **Rule: logging a chore must be as frictionless as possible.** Duration is the hardest field to remember, so it comes first. Every other field is derived and can be edited later.
 - Layout, top to bottom: **duration** (big −/+ stepper by 15 min, chips 15 / 30 / 45 min / 1 h / 1 h 30 / 2 h / 3 h, up to 24 h) → **type grid** → a collapsed line "Aujourd'hui, 14:15 · Moi" that opens date / time / performer / note.
 - Duration pre-fills with the user's last-used duration (overall, not per type).
-- Start time = moment of the tap − duration, rounded to the nearest quarter hour. The user can edit date and time.
+- Start time = moment of the tap − duration, rounded down to the quarter hour (rounding up would make the chore end after the tap, which Q3 refuses). The user can edit date and time.
 - **Tapping a type saves, through a client-side pending state**: a pending card ("🍽️ Vaisselle · 45 min · aujourd'hui 14:15") with a 5 s progress bar, **Modifier** and **Annuler**.
   - Countdown ends → sent to the server: the row is created and notifications go out.
   - Modifier → stops the countdown and opens the edit sheet, which saves with an explicit "Enregistrer".

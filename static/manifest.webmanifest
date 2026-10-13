@@ -1,0 +1,16 @@
+{
+	"name": "TJM · Toujours Moi",
+	"short_name": "TJM",
+	"description": "Qui fait quoi à la maison (c'est toujours moi)",
+	"lang": "fr",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"theme_color": "#ff6b6b",
+	"background_color": "#ff6b6b",
+	"icons": [
+		{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+		{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+		{ "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+	]
+}

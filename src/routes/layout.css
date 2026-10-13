@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+@plugin 'daisyui' {
+	themes: false;
+}
+
+/* Pop (prototypes/01-theme.html, 02-screens.html): off-white base, navy neutral, chunky borders + hard shadow. */
+@plugin 'daisyui/theme' {
+	name: 'pop';
+	default: true;
+	color-scheme: light;
+	--color-base-100: #fdfbf6;
+	--color-base-200: #f3efe4;
+	--color-base-300: #e4ddca;
+	--color-base-content: #1d2440;
+	/* Primary is the viewed person's colour (Q10); neutral until a profile is on screen. */
+	--color-primary: #1d2440;
+	--color-primary-content: #fdfbf6;
+	--color-neutral: #1d2440;
+	--color-neutral-content: #fdfbf6;
+	--color-secondary: #ffd23f;
+	--color-secondary-content: #1d2440;
+	--color-accent: #ff6b6b;
+	--color-accent-content: #1d2440;
+	--color-info: #4d96ff;
+	--color-info-content: #1d2440;
+	--color-success: #3ccf91;
+	--color-success-content: #1d2440;
+	--color-warning: #ffb347;
+	--color-warning-content: #1d2440;
+	--color-error: #e5484d;
+	--color-error-content: #fff;
+	--radius-selector: 0.5rem;
+	--radius-field: 0.5rem;
+	--radius-box: 0.75rem;
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+	--border: 2px;
+	--depth: 0;
+	--noise: 0;
+}
+
+@theme {
+	--font-sans: 'Space Grotesk', 'Noto Color Emoji', system-ui, sans-serif;
+}
+
+/* Spec Q12: a phone tab that isn't installed gets the install screen, nothing else. Mobile = coarse
+   pointer + a short side under `md` (48rem), so a phone turned to landscape stays gated; a tablet
+   (both sides 48rem and up) and desktop are exempt. */
+@custom-variant install-gate (@media (pointer: coarse) and ((width < 48rem) or (height < 48rem)) and (not (display-mode: standalone)));
+
+/* Pop cards and tiles (prototype 02's .pop-edge). */
+@utility pop-edge {
+	border: 2px solid var(--color-base-content);
+	box-shadow: 3px 3px 0 var(--color-base-content);
+}
+
+/* Pop buttons are part of the theme, so they live with it. Unlayered, like the prototype, to win over daisyUI's own shadow. */
+.btn:not(.btn-ghost) {
+	border: 2px solid var(--color-base-content);
+	box-shadow: 2px 2px 0 var(--color-base-content);
+}
+.btn:active {
+	box-shadow: none;
+	translate: 2px 2px;
+}
+
+/* One themed focus ring (the dock links got the browser's blue); daisyUI components keep their own. */
+@layer base {
+	:focus-visible {
+		outline: 2px solid var(--color-base-content);
+		outline-offset: 2px;
+	}
+}

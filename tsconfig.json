@@ -1,0 +1,20 @@
+{
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"rewriteRelativeImportExtensions": true,
+		// Off so test/sveltekit-worker.d.ts types the adapter output, not its JSDoc (@cloudflare/workers-types).
+		"allowJs": false,
+		"checkJs": false,
+		"sourceMap": true,
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"types": ["./.cloudflare/types/index.d.ts", "@cloudflare/vitest-plugin/types", "$app/types"]
+	},
+	"include": ["src", "test", "*.ts"],
+	// Typed by its own tsconfig (service worker globals, not the DOM's).
+	"exclude": ["src/service-worker"]
+}

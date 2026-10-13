@@ -1,0 +1,10 @@
+# Copy to .dev.vars (gitignored) for local dev. Production secrets: `npx cf workers secrets update <NAME> --worker tjm --type secret_text --text <value>` (#12).
+
+# The seeded user you are in `npm run dev` (no Access locally): papa@ (admin), maman@ (parent),
+# lea@ or noe@ (children), all @exemple.fr. Restart the dev server after changing it.
+DEV_VIEWER_EMAIL=papa@exemple.fr
+
+# Web Push VAPID key pair (base64url), a local one, never production's. This prints one:
+# node --input-type=module -e "const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign']);console.log('VAPID_PUBLIC_KEY='+Buffer.from(await crypto.subtle.exportKey('raw',k.publicKey)).toString('base64url')+'\nVAPID_PRIVATE_KEY='+(await crypto.subtle.exportKey('jwk',k.privateKey)).d)"
+VAPID_PUBLIC_KEY=XXXXX
+VAPID_PRIVATE_KEY=XXXXX
