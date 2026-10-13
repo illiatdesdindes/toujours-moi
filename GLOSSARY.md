@@ -42,6 +42,11 @@ brackets when there is one.
 - **Historique** [Historique]: the list of chores performed by the selected profile, newest first,
   by Paris day with its total (spec Q6; `chore-history.ts`, `history-days.ts`). Pages of 50 that
   never split a day, fetched by `?avant=<nextCursor>` on `GET /api/chores`.
+- **Rapports** [Rapports]: the selected profile's totals for one **report period** (spec Q9;
+  `report-periods.ts`, `report-stats.ts`). A report period is a Paris day, a Monday-to-Sunday
+  week, a month or a year, picked by `?periode=jour|semaine|mois|annee&date=YYYY-MM-DD` (no future);
+  its **buckets** are the sub-periods of the "Dans le temps" bars (days, or months for a year). A
+  chore counts in the period of its start.
 - **Edit sheet**: the form that changes a chore, opened by the home's Modifier (pending chore) and
   by a Historique row (saved chore, with Supprimer; read-only 🔒 when the access policy forbids
   it). `ChoreEditSheet.svelte`.
