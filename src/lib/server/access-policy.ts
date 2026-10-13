@@ -26,6 +26,9 @@ export const canEditOrDeleteChore = (
 	return isSelf(viewer, chore.performer) || chore.performer.role === 'child';
 };
 
+/** Spec Q6: the "✎ 3" update counter on Historique rows. */
+export const canSeeChoreUpdateCount = (viewer: PersonRef) => viewer.role === 'admin';
+
 export const canManageMembers = (viewer: PersonRef) => viewer.role === 'admin';
 export const canManageChoreTypes = (viewer: PersonRef) => viewer.role === 'admin';
 

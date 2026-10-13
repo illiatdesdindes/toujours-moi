@@ -1,4 +1,4 @@
-<!-- The edit sheet (spec Q4, Q6): a bottom sheet on mobile, a centred modal on desktop, saved with an explicit "Enregistrer". The home's Modifier opens it on the pending chore; #7 adds editing a saved one. -->
+<!-- The edit sheet (spec Q4, Q6): a bottom sheet on mobile, a centred modal on desktop, saved with an explicit "Enregistrer". The home's Modifier opens it on the pending chore, Historique on a saved one (with Supprimer, or read-only when the access policy forbids editing). -->
 <script lang="ts">
 	import { endsInTheFuture, NO_FUTURE_CHORE_MESSAGE } from '#lib/chore-timing.js';
 	import type { ChoreTypeOption, NewChore, User } from '#lib/domain.js';
@@ -10,17 +10,26 @@
 
 	let {
 		chore,
+		title,
 		choreTypes,
 		performerOptions,
+		readOnly = false,
 		onSave,
+		onDelete,
 		onClose
 	}: {
 		/** Copied into the form when the sheet opens; key the sheet on it. */
 		chore: NewChore;
+		title: string;
 		choreTypes: ChoreTypeOption[];
 		/** "Fait par" (spec Q3): shown when there is a choice. */
 		performerOptions: User[];
-		onSave: (chore: NewChore) => void;
+		/** 🔒 (spec Q6): shown, not editable; no Enregistrer nor Supprimer. */
+		readOnly?: boolean;
+		/** A French reason it wasn't saved keeps the sheet open with it; nothing closes it. */
+		onSave: (chore: NewChore) => void | Promise<string | null>;
+		/** A saved chore's Supprimer, after "Supprimer cette tâche ?" (spec Q6). Same answer as onSave. */
+		onDelete?: () => Promise<string | null>;
 		/** Closed without saving (✕, Échap, the backdrop). */
 		onClose: () => void;
 	} = $props();
@@ -52,19 +61,33 @@
 	let dialog: HTMLDialogElement;
 	$effect(() => dialog.showModal());
 
-	let saved = false;
-	const save = () => {
-		if (draftError) return;
-		saved = true;
-		onSave({
-			...chore,
-			choreTypeId: draft.choreTypeId,
-			durationMinutes: draft.durationMinutes,
-			startedAt: fromParisDateAndTime(draft.date, draft.time).toISOString(),
-			note: draft.note.trim() || null,
-			performerUserId: draft.performerUserId
-		});
+	let closedByAnAnswer = false;
+	let serverError = $state<string | null>(null);
+	let isSending = $state(false);
+	/** Closes on success; a refusal stays on screen with the draft, so nothing typed is lost. */
+	const closeUnlessRefused = async (answer: void | Promise<string | null>) => {
+		isSending = true;
+		serverError = (await answer) ?? null;
+		isSending = false;
+		if (serverError) return;
+		closedByAnAnswer = true;
 		dialog.close();
+	};
+	const save = () => {
+		if (draftError || readOnly) return;
+		void closeUnlessRefused(
+			onSave({
+				...chore,
+				choreTypeId: draft.choreTypeId,
+				durationMinutes: draft.durationMinutes,
+				startedAt: fromParisDateAndTime(draft.date, draft.time).toISOString(),
+				note: draft.note.trim() || null,
+				performerUserId: draft.performerUserId
+			})
+		);
+	};
+	const confirmAndDelete = () => {
+		if (onDelete && confirm('Supprimer cette tâche ?')) void closeUnlessRefused(onDelete());
 	};
 </script>
 
@@ -72,11 +95,11 @@
 	bind:this={dialog}
 	class="modal modal-bottom md:modal-middle"
 	aria-labelledby="chore-edit-sheet-title"
-	onclose={() => saved || onClose()}
+	onclose={() => closedByAnAnswer || onClose()}
 >
 	<div class="modal-box max-h-[90dvh] bg-base-100 p-4 pop-edge">
 		<div class="mb-3 flex items-center justify-between">
-			<h2 id="chore-edit-sheet-title" class="text-lg font-bold">Modifier avant d'enregistrer</h2>
+			<h2 id="chore-edit-sheet-title" class="text-lg font-bold">{title}</h2>
 			<button
 				type="button"
 				class="btn btn-circle btn-ghost btn-sm"
@@ -84,6 +107,11 @@
 				onclick={() => dialog.close()}><Icon glyph="x-mark" /></button
 			>
 		</div>
+		{#if readOnly}
+			<p class="mb-3 alert text-sm">
+				<Icon glyph="lock-closed" class="size-4" />Tu ne peux pas modifier cette tâche.
+			</p>
+		{/if}
 		<form
 			class="space-y-3"
 			onsubmit={(event) => {
@@ -91,23 +119,41 @@
 				save();
 			}}
 		>
-			<DurationStepper bind:durationMinutes={draft.durationMinutes} compact />
-			<ChoreTypePicker
-				{choreTypes}
-				selectedChoreTypeId={draft.choreTypeId}
-				onPick={(choreType) => (draft.choreTypeId = choreType.id)}
-			/>
-			<ChoreDetailsFields
-				bind:date={draft.date}
-				bind:time={draft.time}
-				bind:note={draft.note}
-				bind:performerUserId={draft.performerUserId}
-				{performerOptions}
-				latestDate={today}
-				required
-			/>
-			{#if draftError}<p class="text-sm font-semibold text-error" role="alert">{draftError}</p>{/if}
-			<button class="btn w-full btn-primary" disabled={!!draftError}>Enregistrer</button>
+			<fieldset class="space-y-3" disabled={readOnly}>
+				<DurationStepper bind:durationMinutes={draft.durationMinutes} compact />
+				<ChoreTypePicker
+					{choreTypes}
+					selectedChoreTypeId={draft.choreTypeId}
+					onPick={(choreType) => (draft.choreTypeId = choreType.id)}
+				/>
+				<ChoreDetailsFields
+					bind:date={draft.date}
+					bind:time={draft.time}
+					bind:note={draft.note}
+					bind:performerUserId={draft.performerUserId}
+					{performerOptions}
+					latestDate={today}
+					required
+				/>
+			</fieldset>
+			{#if !readOnly}
+				{#if draftError ?? serverError}<p class="text-sm font-semibold text-error" role="alert">
+						{draftError ?? serverError}
+					</p>{/if}
+				<div class="flex gap-2">
+					{#if onDelete}
+						<button
+							type="button"
+							class="btn btn-outline btn-error"
+							disabled={isSending}
+							onclick={confirmAndDelete}>Supprimer</button
+						>
+					{/if}
+					<button class="btn flex-1 btn-primary" disabled={!!draftError || isSending}
+						>Enregistrer</button
+					>
+				</div>
+			{/if}
 		</form>
 	</div>
 	<form method="dialog" class="modal-backdrop"><button>Fermer</button></form>

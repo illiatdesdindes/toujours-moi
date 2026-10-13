@@ -67,3 +67,19 @@ export type NewChore = {
 
 /** A chore's note is one line (spec Q3), this long at most. */
 export const MAX_CHORE_NOTE_LENGTH = 200;
+
+/** One Historique row (spec Q6): the chore as the edit sheet takes it, plus what the row shows. */
+export type HistoryChore = NewChore & {
+	icon: string;
+	shortLabel: string;
+	fullLabel: string;
+	performerName: string;
+	performerColourKey: ColourKey;
+	/** The access policy's answer; false = the sheet opens read-only (🔒). */
+	canEdit: boolean;
+	/** The "✎ n" badge, admin only (spec Q6): null for everyone else. */
+	updateCount: number | null;
+};
+
+/** One page of Historique; `nextCursor` (`?avant=`) fetches the next, null on the last. */
+export type HistoryPage = { chores: HistoryChore[]; nextCursor: string | null };

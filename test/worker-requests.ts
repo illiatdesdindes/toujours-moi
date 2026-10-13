@@ -45,3 +45,22 @@ export const postJson = async (path: string, body: unknown, headers: HeadersInit
 	await waitOnExecutionContext(ctx);
 	return res;
 };
+
+/** A form action POST (`/historique?/updateChore`), as `use:enhance`/`deserialize` would send it. */
+export const postFormAction = async (
+	pathAndAction: string,
+	fields: Record<string, string>,
+	headers: HeadersInit = {}
+) => {
+	const ctx = createExecutionContext();
+	const request = new Request(`http://example.com${pathAndAction}`, {
+		method: 'POST',
+		headers: { Accept: 'application/json', Origin: 'http://example.com', ...headers },
+		body: new URLSearchParams(fields)
+	});
+	const res = await worker.fetch(request, env, ctx);
+	await waitOnExecutionContext(ctx);
+	// SvelteKit answers 200 with `{ type, status, data }`; data is devalue-encoded.
+	const answer = (await res.json()) as { type: string; status?: number; data?: string };
+	return { type: answer.type, status: answer.status ?? res.status, data: answer.data };
+};

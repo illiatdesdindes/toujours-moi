@@ -32,28 +32,9 @@ export const logChore = async (
 	const existingChoreAuthor = await findChoreAuthor(db, chore.id);
 	if (existingChoreAuthor) return answerRetry(existingChoreAuthor, chore.id, viewer);
 
-	const startedAt = new Date(chore.startedAt);
-	if (
-		endsInTheFuture(
-			startedAt,
-			chore.durationMinutes,
-			new Date(now.getTime() + CLOCK_SKEW_ALLOWANCE_MS)
-		)
-	)
-		return refused(400, NO_FUTURE_CHORE_MESSAGE);
-	const [choreType, performer] = await Promise.all([
-		db
-			// Archived types still take chores: one queued in the outbox before the archiving must go through.
-			.prepare('SELECT 1 FROM chore_types WHERE id = ? AND deleted_at IS NULL')
-			.bind(chore.choreTypeId)
-			.first(),
-		db
-			.prepare('SELECT id, role FROM users WHERE id = ? AND deleted_at IS NULL')
-			.bind(chore.performerUserId)
-			.first<{ id: string; role: UserRole }>()
-	]);
-	if (!choreType) return refused(400, 'Type de tâche inconnu');
-	if (!performer) return refused(400, 'Personne inconnue');
+	if (endsInTheFutureForTheServer(chore, now)) return refused(400, NO_FUTURE_CHORE_MESSAGE);
+	const performer = await findChoreTypeAndPerformer(db, chore);
+	if (typeof performer === 'string') return refused(400, performer);
 	// 422, not 403: the outbox drops it and says so, while a 403 (Access JWT check) is retried.
 	if (!canLogFor(viewer, performer))
 		return refused(422, 'Tu ne peux pas noter une tâche pour cette personne');
@@ -65,7 +46,7 @@ export const logChore = async (
 		{
 			chore_type_id: chore.choreTypeId,
 			duration_minutes: chore.durationMinutes,
-			started_at: startedAt.toISOString(),
+			started_at: new Date(chore.startedAt).toISOString(),
 			performer_user_id: performer.id,
 			author_user_id: viewer.id,
 			note: chore.note
@@ -76,6 +57,33 @@ export const logChore = async (
 	if (!saved) return answerRetry((await findChoreAuthor(db, chore.id))!, chore.id, viewer);
 	await rememberLastDuration(db, viewer.id, chore.durationMinutes);
 	return { status: 201, body: { id: chore.id } };
+};
+
+/** Spec Q3's no-future rule, with the phone's clock allowance. */
+export const endsInTheFutureForTheServer = (chore: NewChore, now: Date) =>
+	endsInTheFuture(
+		new Date(chore.startedAt),
+		chore.durationMinutes,
+		new Date(now.getTime() + CLOCK_SKEW_ALLOWANCE_MS)
+	);
+
+/** The chore's performer (as the access policy needs it), or the French reason the chore can't be saved. */
+export const findChoreTypeAndPerformer = async (db: D1Database, chore: NewChore) => {
+	const [choreType, performer] = await Promise.all([
+		db
+			// Archived types still take chores: one queued in the outbox before the archiving must go
+			// through, and an edit keeps a past chore's archived type.
+			.prepare('SELECT 1 FROM chore_types WHERE id = ? AND deleted_at IS NULL')
+			.bind(chore.choreTypeId)
+			.first(),
+		db
+			.prepare('SELECT id, role FROM users WHERE id = ? AND deleted_at IS NULL')
+			.bind(chore.performerUserId)
+			.first<{ id: string; role: UserRole }>()
+	]);
+	if (!choreType) return 'Type de tâche inconnu';
+	if (!performer) return 'Personne inconnue';
+	return performer;
 };
 
 const findChoreAuthor = (db: D1Database, choreId: string) =>
@@ -113,7 +121,7 @@ const rememberLastDuration = async (db: D1Database, viewerId: string, durationMi
 };
 
 /** The request body as a NewChore, or the French reason it isn't one. */
-const parseNewChore = (body: unknown): NewChore | string => {
+export const parseNewChore = (body: unknown): NewChore | string => {
 	if (!body || typeof body !== 'object') return 'Requête invalide';
 	const { id, choreTypeId, durationMinutes, startedAt, note, performerUserId } = body as Record<
 		string,

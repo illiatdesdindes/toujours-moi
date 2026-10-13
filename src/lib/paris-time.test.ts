@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatParisDayAndTime, fromParisDateAndTime, toParisDateAndTime } from './paris-time';
+import {
+	formatParisDayAndTime,
+	fromParisDateAndTime,
+	startOfParisDay,
+	toParisDateAndTime
+} from './paris-time';
 
 describe('toParisDateAndTime', () => {
 	it('gives the Paris wall date and time, summer and winter', () => {
@@ -58,4 +63,19 @@ describe('formatParisDayAndTime', () => {
 	])('%s → %s', (instant, label) =>
 		expect(formatParisDayAndTime(new Date(instant), now)).toBe(label)
 	);
+});
+
+describe('startOfParisDay', () => {
+	it('is Paris midnight of that day, summer, winter and on a DST change', () => {
+		expect(startOfParisDay(new Date('2026-07-01T12:15:00Z')).toISOString()).toBe(
+			'2026-06-30T22:00:00.000Z'
+		);
+		expect(startOfParisDay(new Date('2026-12-31T23:30:00Z')).toISOString()).toBe(
+			'2026-12-31T23:00:00.000Z'
+		);
+		// 25 Oct 2026, clocks go back at 03:00: the day still starts at 00:00 summer time
+		expect(startOfParisDay(new Date('2026-10-25T20:00:00Z')).toISOString()).toBe(
+			'2026-10-24T22:00:00.000Z'
+		);
+	});
 });

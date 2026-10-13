@@ -37,21 +37,25 @@ const wallTimeToUtcMs = (date: string, time = '00:00') => {
 
 const DAY_MS = 86_400_000;
 
-/** `aujourd'hui, 14:15`, `hier, 09:00`, `lundi 5 oct., 10:00` (prototype 02's formatDayTime). */
-export const formatParisDayAndTime = (instant: Date, now: Date) => {
-	const { date, time } = toParisDateAndTime(instant);
+/** `aujourd'hui`, `hier`, `lundi 5 oct.` (prototype 02's formatDayLabel), the Paris day of `instant`. */
+export const formatParisDay = (instant: Date, now: Date) => {
+	const { date } = toParisDateAndTime(instant);
 	const today = toParisDateAndTime(now).date;
 	const yesterday = new Date(wallTimeToUtcMs(today) - DAY_MS).toISOString().slice(0, 10);
-	const day =
-		date === today
-			? "aujourd'hui"
-			: date === yesterday
-				? 'hier'
-				: new Intl.DateTimeFormat('fr-FR', {
-						timeZone: PARIS,
-						weekday: 'long',
-						day: 'numeric',
-						month: 'short'
-					}).format(instant);
-	return `${day}, ${time}`;
+	if (date === today) return "aujourd'hui";
+	if (date === yesterday) return 'hier';
+	return new Intl.DateTimeFormat('fr-FR', {
+		timeZone: PARIS,
+		weekday: 'long',
+		day: 'numeric',
+		month: 'short'
+	}).format(instant);
 };
+
+/** `aujourd'hui, 14:15`, `hier, 09:00`, `lundi 5 oct., 10:00` (prototype 02's formatDayTime). */
+export const formatParisDayAndTime = (instant: Date, now: Date) =>
+	`${formatParisDay(instant, now)}, ${toParisDateAndTime(instant).time}`;
+
+/** The instant the Paris day of `instant` starts (midnight, 23 or 25 hours before the next on DST days). */
+export const startOfParisDay = (instant: Date) =>
+	fromParisDateAndTime(toParisDateAndTime(instant).date, '00:00');

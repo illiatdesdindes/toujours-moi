@@ -189,6 +189,7 @@
 	{#key choreInEditSheet.id}
 		<ChoreEditSheet
 			chore={choreInEditSheet}
+			title="Modifier avant d'enregistrer"
 			choreTypes={data.choreTypes}
 			performerOptions={data.performerOptions}
 			onSave={(chore) => {
