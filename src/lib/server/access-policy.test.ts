@@ -34,9 +34,9 @@ describe('access policy', () => {
 		expect(allowed((profile) => canViewProfile(viewer, profile))).toEqual(expected);
 	});
 
-	// Spec Q3: children log for themselves; parents and admin for themselves + the children.
+	// Spec Q3: children log for themselves; parents for themselves + the children; admin for everyone.
 	it.each([
-		[admin, ['admin', 'child', 'other-child']],
+		[admin, ['admin', 'parent', 'other-parent', 'child', 'other-child']],
 		[parent, ['parent', 'child', 'other-child']],
 		[child, ['child']]
 	])('lets %o log for %o', (viewer, expected) => {

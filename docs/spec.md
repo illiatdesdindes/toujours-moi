@@ -55,7 +55,7 @@ Chores performed by one person and logged by another are called "logged for" bel
 - `chore_type_id` (required), `duration_minutes` (required, multiple of 15, 15 to 1440 = 24 h), `started_at` (UTC instant), `performer_user_id` (who did it), `author_user_id` (who logged it, set by the server, never shown), `note` (optional, one line).
 - Days, weeks, months and years are computed in **Europe/Paris**.
 - No future chores: `started_at + duration` can't be after now.
-- Children always log for themselves. A parent or admin picks the performer from themselves + the children (default: themselves, or the child whose view they've switched to).
+- Children always log for themselves. A parent picks the performer from themselves + the children, the admin from everyone (default: themselves, or the person whose view they've switched to).
 
 ### Home: quick log (Q4, Q5)
 

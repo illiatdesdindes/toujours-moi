@@ -11,9 +11,11 @@ export const canViewProfile = (viewer: PersonRef, profile: PersonRef) =>
 	isSelf(viewer, profile) ||
 	(isGrownUp(viewer) && profile.role === 'child');
 
-/** Spec Q3: children log for themselves; parents and admin for themselves + the children. */
+/** Spec Q3: children log for themselves; parents for themselves + the children; admin for everyone. */
 export const canLogFor = (viewer: PersonRef, performer: PersonRef) =>
-	isSelf(viewer, performer) || (isGrownUp(viewer) && performer.role === 'child');
+	viewer.role === 'admin' ||
+	isSelf(viewer, performer) ||
+	(isGrownUp(viewer) && performer.role === 'child');
 
 /** Spec Q6: child → performed and logged by themselves; parent → their own + any child's; admin → all. */
 export const canEditOrDeleteChore = (
