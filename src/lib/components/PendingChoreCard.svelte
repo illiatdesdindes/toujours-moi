@@ -55,7 +55,7 @@
 			<p class="font-bold">{summary}</p>
 			<p class="opacity-80">{dayAndTime}</p>
 		</div>
-		<!-- The global focus ring is navy, like the card until #6 tints primary. -->
+		<!-- The global focus ring is navy; the card wears the profile's colour, which may be navy too (Famille). -->
 		<button
 			bind:this={editButton}
 			type="button"

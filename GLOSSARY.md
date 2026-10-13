@@ -17,6 +17,11 @@ brackets when there is one.
 - **PersonRef**: the minimum the access policy needs about a person: `{ id, role }`.
 - **Access policy**: `src/lib/server/access-policy.ts`, the one place that decides who may do what.
   "Access" alone means Cloudflare Access, the login in front of the app.
+- **Profile switcher**: the header dropdown of Accueil / Historique / Rapports that picks whose view
+  is on screen, kept in `?profil=<user_id|famille>` (spec Q8; `ProfileSwitcher.svelte`,
+  `profile-selection.ts`). Children don't get it.
+- **Selected profile**: the person (or Famille) the profile switcher shows; no `?profil=` means the
+  viewer. The page wears their colour (`--color-primary`), Famille stays neutral.
 - **Family profile** [Famille]: the profile option that shows the whole household, for parents and
   the admin (spec Q8). Code says `familyProfile`, not `famille`.
 
