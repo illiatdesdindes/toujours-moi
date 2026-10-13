@@ -1,5 +1,5 @@
 // Who hears about a new chore, and what their phone says (spec Q11). Pure: the sending is
-// chore-notification-sending.ts's.
+// chore-notification-sending.ts's, the delivery push-delivery.ts's.
 import { formatDuration } from '../chore-timing';
 import type { PersonRef, PushNotificationPayload, SelectedProfile, User } from '../domain';
 import { formatParisDayAndTime } from '../paris-time';

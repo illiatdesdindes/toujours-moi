@@ -15,7 +15,7 @@ import {
 	postFormAction,
 	postJson,
 	sendJson,
-	stubAccessCerts
+	stubOutboundFetch
 } from './worker-requests';
 
 const DISHES_ID = '01900000-0000-7000-a000-000000000001';
@@ -100,7 +100,7 @@ const savedEndpoints = () =>
 
 beforeEach(async () => {
 	pushServiceStatusOf = {};
-	stubAccessCerts(async (url) => new Response(null, { status: pushServiceStatusOf[url] ?? 201 }));
+	stubOutboundFetch(async (url) => new Response(null, { status: pushServiceStatusOf[url] ?? 201 }));
 	await resetFamily();
 	await seedFamily();
 	for (const userId of [ADMIN_ID, PARENT_ID, CHILD_ID, SECOND_CHILD_ID] as const)
@@ -254,6 +254,7 @@ describe("Réglages' Tester", () => {
 
 	it("refuses someone else's device, and says when the device has unsubscribed", async () => {
 		expect(await testDevice(PARENT_ID, PHONE_OF[ADMIN_ID])).toBe(404);
+		expect(await testDevice(PARENT_ID, 'http://push.example/not-https')).toBe(400);
 		pushServiceStatusOf[PHONE_OF[PARENT_ID]] = 410;
 		expect(await testDevice(PARENT_ID, PHONE_OF[PARENT_ID])).toBe(410);
 		expect(await savedEndpoints()).not.toContain(PHONE_OF[PARENT_ID]);

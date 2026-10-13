@@ -9,12 +9,20 @@ export type SavedPushSubscription = {
 	keys: { p256dh: string; auth: string };
 };
 
-const isText = (candidate: unknown, maxLength: number): candidate is string =>
+const isNonEmptyTextUpTo = (candidate: unknown, maxLength: number): candidate is string =>
 	typeof candidate === 'string' && candidate.length > 0 && candidate.length <= maxLength;
 
 /** The server fetches the endpoint: only an https URL. */
 export const isPushEndpoint = (candidate: unknown): candidate is string =>
-	isText(candidate, 2048) && URL.canParse(candidate) && new URL(candidate).protocol === 'https:';
+	isNonEmptyTextUpTo(candidate, 2048) &&
+	URL.canParse(candidate) &&
+	new URL(candidate).protocol === 'https:';
+
+/** `{ endpoint }` from the page (untrusted): the endpoint, or null when it isn't one. */
+export const parsePushEndpointBody = (body: unknown) => {
+	const { endpoint } = (body ?? {}) as { endpoint?: unknown };
+	return isPushEndpoint(endpoint) ? endpoint : null;
+};
 
 /** `PushSubscription.toJSON()` from the page (untrusted), or null when it isn't one. */
 export const parsePushSubscriptionBody = (body: unknown) => {
@@ -23,7 +31,12 @@ export const parsePushSubscriptionBody = (body: unknown) => {
 		keys?: { p256dh?: unknown; auth?: unknown } | null;
 	};
 	const [p256dh, auth] = [keys?.p256dh, keys?.auth];
-	if (!isPushEndpoint(endpoint) || !isText(p256dh, 200) || !isText(auth, 200)) return null;
+	if (
+		!isPushEndpoint(endpoint) ||
+		!isNonEmptyTextUpTo(p256dh, 200) ||
+		!isNonEmptyTextUpTo(auth, 200)
+	)
+		return null;
 	return { endpoint, keys: { p256dh, auth } };
 };
 
@@ -68,4 +81,23 @@ export const listActiveUsersPushSubscriptions = async (
 		endpoint: row.endpoint,
 		keys: { p256dh: row.p256dh, auth: row.auth }
 	}));
+};
+
+/** One of the viewer's own devices, or null (someone else's, or gone). */
+export const findViewerPushSubscription = async (
+	db: D1Database,
+	viewerUserId: string,
+	endpoint: string
+): Promise<SavedPushSubscription | null> => {
+	const row = await db
+		.prepare(
+			`SELECT s.user_id, s.endpoint, s.p256dh, s.auth FROM push_subscriptions s
+			JOIN users u ON u.id = s.user_id AND u.deleted_at IS NULL
+			WHERE s.user_id = ? AND s.endpoint = ?`
+		)
+		.bind(viewerUserId, endpoint)
+		.first<{ user_id: string; endpoint: string; p256dh: string; auth: string }>();
+	return row
+		? { userId: row.user_id, endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }
+		: null;
 };

@@ -14,7 +14,7 @@ import {
 	SECOND_CHILD_ID,
 	seedFamily
 } from './test-family';
-import { accessHeaders, fetchPage, stubAccessCerts } from './worker-requests';
+import { accessHeaders, fetchPage, stubOutboundFetch } from './worker-requests';
 
 const DISHES_ID = '01900000-0000-7000-a000-000000000001';
 const COOKING_ID = '01900000-0000-7000-a000-000000000002';
@@ -153,7 +153,7 @@ describe('loadReportStats', () => {
 
 describe('/rapports', () => {
 	beforeEach(async () => {
-		stubAccessCerts();
+		stubOutboundFetch();
 		await resetFamily();
 		await seedFamily();
 		await seedChore(ADMIN_ID, new Date(Date.now() - 3 * 3_600_000).toISOString(), 45);

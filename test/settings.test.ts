@@ -11,7 +11,7 @@ import {
 	SECOND_CHILD_ID,
 	seedFamily
 } from './test-family';
-import { accessHeaders, fetchPage, postFormAction, stubAccessCerts } from './worker-requests';
+import { accessHeaders, fetchPage, postFormAction, stubOutboundFetch } from './worker-requests';
 
 const PAPA = 'papa@exemple.fr';
 const MAMAN = 'maman@exemple.fr';
@@ -67,7 +67,7 @@ describe('Réglages', () => {
 		seededChoreTypes = (await env.DB.prepare('SELECT * FROM chore_types').all()).results;
 	});
 	beforeEach(async () => {
-		stubAccessCerts();
+		stubOutboundFetch();
 		await resetFamily();
 		await restoreSeededChoreTypes();
 		await seedFamily();

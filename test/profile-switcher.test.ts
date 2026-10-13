@@ -7,7 +7,7 @@ import {
 	SECOND_CHILD_ID,
 	seedFamily
 } from './test-family';
-import { accessHeaders, fetchPage, stubAccessCerts } from './worker-requests';
+import { accessHeaders, fetchPage, stubOutboundFetch } from './worker-requests';
 
 const PROFILE_PAGES = ['/', '/historique', '/rapports'];
 
@@ -23,7 +23,7 @@ const statusesFor = async (email: string, profileParam: string) => {
 
 describe('profile switcher (spec Q8)', () => {
 	beforeEach(async () => {
-		stubAccessCerts();
+		stubOutboundFetch();
 		await resetFamily();
 		await seedFamily();
 	});

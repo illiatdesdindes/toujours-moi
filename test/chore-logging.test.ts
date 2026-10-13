@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { uuidV7 } from '../src/lib/uuid';
 import { ADMIN_ID, CHILD_ID, PARENT_ID, resetFamily, seedFamily } from './test-family';
-import { accessHeaders, fetchPage, postJson, stubAccessCerts } from './worker-requests';
+import { accessHeaders, fetchPage, postJson, stubOutboundFetch } from './worker-requests';
 
 const DISHES_ID = '01900000-0000-7000-a000-000000000001';
 const HOUR_MS = 3_600_000;
@@ -33,7 +33,7 @@ const choreVersions = () =>
 
 describe('POST /api/chores', () => {
 	beforeEach(async () => {
-		stubAccessCerts();
+		stubOutboundFetch();
 		await resetFamily();
 		await seedFamily();
 	});
@@ -152,7 +152,7 @@ describe('POST /api/chores', () => {
 
 describe('Accueil', () => {
 	beforeEach(async () => {
-		stubAccessCerts();
+		stubOutboundFetch();
 		await resetFamily();
 		await seedFamily();
 	});

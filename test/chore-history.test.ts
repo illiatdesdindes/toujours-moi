@@ -11,7 +11,7 @@ import {
 	SECOND_CHILD_ID,
 	seedFamily
 } from './test-family';
-import { accessHeaders, fetchPage, postFormAction, stubAccessCerts } from './worker-requests';
+import { accessHeaders, fetchPage, postFormAction, stubOutboundFetch } from './worker-requests';
 
 const DISHES_ID = '01900000-0000-7000-a000-000000000001';
 const COOKING_ID = '01900000-0000-7000-a000-000000000002';
@@ -104,7 +104,7 @@ const fetchHistoryPage = async (viewerId: FamilyMemberId, query = '') => {
 
 describe('Historique', () => {
 	beforeEach(async () => {
-		stubAccessCerts();
+		stubOutboundFetch();
 		await resetFamily();
 		await seedFamily();
 	});

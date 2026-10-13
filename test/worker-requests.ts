@@ -8,10 +8,10 @@ import { createAccessSigner } from '../src/lib/server/access-jwt.fixtures';
 const signer = await createAccessSigner();
 
 /**
- * Serves Access's certs endpoint to the Worker, and any other URL with `fetchOtherUrl` (a fake push
- * service); undo with `vi.unstubAllGlobals()`.
+ * Fakes the Worker's outbound fetch: Access's certs endpoint, and any other URL with `fetchOtherUrl`
+ * (a fake push service); undo with `vi.unstubAllGlobals()`.
  */
-export const stubAccessCerts = (
+export const stubOutboundFetch = (
 	fetchOtherUrl?: (url: string, init?: RequestInit) => Promise<Response>
 ) =>
 	vi.stubGlobal(
@@ -46,7 +46,10 @@ export const fetchPage = async (path: string, headers: HeadersInit = {}) => {
 export const postJson = (path: string, body: unknown, headers: HeadersInit = {}) =>
 	sendJson('POST', path, body, headers);
 
-/** A JSON request to the built Worker; waits for its `waitUntil` work (the notifications) too. */
+/**
+ * A JSON request to the built Worker. Doesn't wait for `waitUntil` from cloudflare:workers (the
+ * notifications): poll for their effects.
+ */
 export const sendJson = async (
 	method: 'POST' | 'DELETE',
 	path: string,

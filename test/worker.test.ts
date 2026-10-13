@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetFamily, seedAdmin } from './test-family';
-import { accessHeaders, fetchPage, stubAccessCerts } from './worker-requests';
+import { accessHeaders, fetchPage, stubOutboundFetch } from './worker-requests';
 
 describe('worker', () => {
 	let headers: Record<string, string>;
@@ -9,7 +9,7 @@ describe('worker', () => {
 		await seedAdmin();
 		headers = await accessHeaders('papa@exemple.fr');
 	});
-	beforeEach(stubAccessCerts);
+	beforeEach(stubOutboundFetch);
 	afterEach(() => vi.unstubAllGlobals());
 
 	it.each([

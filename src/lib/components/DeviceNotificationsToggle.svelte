@@ -11,7 +11,7 @@
 	let deviceNotifications = $state<'unsupported' | 'denied' | 'off' | 'on' | 'busy'>('off');
 	let isTesting = $state(false);
 
-	const sendToServer = async (
+	const sendPushSubscriptionRequest = async (
 		method: 'POST' | 'DELETE',
 		body: object,
 		path: '/reglages/notifications' | '/reglages/notifications/test' = '/reglages/notifications'
@@ -24,7 +24,7 @@
 		if (!response.ok) throw new Error(String(response.status));
 	};
 	const saveSubscription = (subscription: PushSubscription) =>
-		sendToServer('POST', subscription.toJSON());
+		sendPushSubscriptionRequest('POST', subscription.toJSON());
 
 	onMount(async () => {
 		if (!('serviceWorker' in navigator) || !('PushManager' in window))
@@ -45,7 +45,7 @@
 			if (wasOn) {
 				const subscription = await pushManager.getSubscription();
 				if (subscription) {
-					await sendToServer('DELETE', { endpoint: subscription.endpoint });
+					await sendPushSubscriptionRequest('DELETE', { endpoint: subscription.endpoint });
 					await subscription.unsubscribe();
 				}
 				deviceNotifications = 'off';
@@ -70,14 +70,14 @@
 		}
 	};
 
-	const sendTestNotification = async () => {
+	const requestTestNotification = async () => {
 		isTesting = true;
 		try {
 			const subscription = await (
 				await navigator.serviceWorker.ready
 			).pushManager.getSubscription();
 			if (!subscription) throw new Error('no subscription');
-			await sendToServer(
+			await sendPushSubscriptionRequest(
 				'POST',
 				{ endpoint: subscription.endpoint },
 				'/reglages/notifications/test'
@@ -109,7 +109,7 @@
 			type="button"
 			class="btn btn-sm"
 			disabled={deviceNotifications !== 'on' || isTesting}
-			onclick={sendTestNotification}
+			onclick={requestTestNotification}
 		>
 			{#if isTesting}<span class="loading loading-sm loading-spinner"></span>{/if}
 			Tester

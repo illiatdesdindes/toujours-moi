@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { saveWithVersion } from '../src/lib/server/record-versions';
 import { ADMIN_ID, CHILD_ID, resetFamily, seedFamily } from './test-family';
-import { accessHeaders, fetchPage, stubAccessCerts } from './worker-requests';
+import { accessHeaders, fetchPage, stubOutboundFetch } from './worker-requests';
 
 const expectAccessDenied = async (res: Response) => {
 	expect(res.status).toBe(403);
@@ -13,7 +13,7 @@ const expectAccessDenied = async (res: Response) => {
 
 describe('viewer access', () => {
 	beforeEach(async () => {
-		stubAccessCerts();
+		stubOutboundFetch();
 		await resetFamily();
 	});
 	afterEach(() => vi.unstubAllGlobals());

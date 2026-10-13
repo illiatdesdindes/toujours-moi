@@ -4,17 +4,15 @@ import { env } from 'cloudflare:workers';
 import { error } from '@sveltejs/kit';
 import {
 	deletePushSubscription,
-	isPushEndpoint,
+	parsePushEndpointBody,
 	parsePushSubscriptionBody,
 	savePushSubscription
 } from '#lib/server/push-subscriptions.js';
 import type { RequestHandler } from './$types';
 
-const readJsonBody = (request: Request): Promise<unknown> => request.json().catch(() => null);
-
 /** `PushSubscription.toJSON()`. */
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const subscription = parsePushSubscriptionBody(await readJsonBody(request));
+	const subscription = parsePushSubscriptionBody(await request.json().catch(() => null));
 	if (!subscription) error(400, 'Abonnement invalide');
 	await savePushSubscription(env.DB, locals.viewer.id, subscription);
 	return new Response(null, { status: 204 });
@@ -22,8 +20,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 /** `{ endpoint }`: the device turned notifications off. */
 export const DELETE: RequestHandler = async ({ request }) => {
-	const endpoint = ((await readJsonBody(request)) as { endpoint?: unknown } | null)?.endpoint;
-	if (!isPushEndpoint(endpoint)) error(400, 'Abonnement invalide');
+	const endpoint = parsePushEndpointBody(await request.json().catch(() => null));
+	if (!endpoint) error(400, 'Abonnement invalide');
 	await deletePushSubscription(env.DB, endpoint);
 	return new Response(null, { status: 204 });
 };
