@@ -51,12 +51,12 @@ export default defineConfig(({ mode }) => {
 	};
 });
 
-// ponytail: the production database doesn't exist yet; #12 creates it and pastes its ID here.
+// The same ID as the repo variable D1_PRODUCTION_ID (ci.yml).
 function productionDatabaseId(): string {
-	throw new Error('cloudflare.config.ts: no production D1 database yet (#12)');
+	return '8b6993aa-3a3f-4852-82f4-9b199e2f48e0';
 }
 
-// ponytail: the Access application doesn't exist yet; #12 creates it and pastes its AUD tag here.
+// The "Application Audience (AUD) Tag" of the `tjm` Access application (not its ID from the dashboard URL).
 function productionAccessAud(): string {
-	throw new Error('cloudflare.config.ts: no production Access application yet (#12)');
+	return '31ec84d8d025c7cac2ab9a34ccd9b29d2dbca34d8a6bb709c00416291be24051';
 }
