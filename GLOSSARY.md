@@ -39,6 +39,12 @@ brackets when there is one.
 - **Quick log**: the home's two taps (duration, then type) that log a chore (spec Q4).
 - **Pending chore**: a quick-logged chore during its 5 s countdown, before it's committed; Annuler
   drops it, Modifier takes it to the edit sheet (`pending-chore.ts`).
+- **Historique** [Historique]: the list of chores performed by the selected profile, newest first,
+  by Paris day with its total (spec Q6; `chore-history.ts`, `history-days.ts`). Pages of 50 that
+  never split a day, fetched by `?avant=<nextCursor>` on `GET /api/chores`.
+- **Edit sheet**: the form that changes a chore, opened by the home's Modifier (pending chore) and
+  by a Historique row (saved chore, with Supprimer; read-only 🔒 when the access policy forbids
+  it). `ChoreEditSheet.svelte`.
 - **Chore outbox**: the `localStorage` queue of committed chores the server doesn't have yet,
   retried until it does (`chore-outbox.ts`, spec Q20 point 1).
 
@@ -49,3 +55,7 @@ brackets when there is one.
 - **Version**: one `record_versions` row: the full row after a change (`record_snapshot_json`),
   numbered by the row's `update_count`.
 - **Change kind**: `created`, `updated` or `deleted` (the soft delete that sets `deleted_at`).
+- **Soft delete** [Supprimer]: setting `deleted_at` and `deleted_by_user_id` through
+  `saveWithVersion()`; the row stays, and leaves Historique and the reports. No undelete in v1.
+- **Update count**: a row's `update_count`, its number of versions after the first; shown on
+  Historique rows as "✎ n" to the admin only (`canSeeChoreUpdateCount`).

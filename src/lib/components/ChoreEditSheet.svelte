@@ -30,7 +30,7 @@
 		onSave: (chore: NewChore) => void | Promise<string | null>;
 		/** A saved chore's Supprimer, after "Supprimer cette tâche ?" (spec Q6). Same answer as onSave. */
 		onDelete?: () => Promise<string | null>;
-		/** Closed without saving (✕, Échap, the backdrop). */
+		/** Closed, saved or not (✕, Échap, the backdrop, after a save or a delete): unmount the sheet. */
 		onClose: () => void;
 	} = $props();
 
@@ -61,7 +61,6 @@
 	let dialog: HTMLDialogElement;
 	$effect(() => dialog.showModal());
 
-	let closedByAnAnswer = false;
 	let serverError = $state<string | null>(null);
 	let isSending = $state(false);
 	/** Closes on success; a refusal stays on screen with the draft, so nothing typed is lost. */
@@ -69,9 +68,7 @@
 		isSending = true;
 		serverError = (await answer) ?? null;
 		isSending = false;
-		if (serverError) return;
-		closedByAnAnswer = true;
-		dialog.close();
+		if (!serverError) dialog.close();
 	};
 	const save = () => {
 		if (draftError || readOnly) return;
@@ -95,7 +92,7 @@
 	bind:this={dialog}
 	class="modal modal-bottom md:modal-middle"
 	aria-labelledby="chore-edit-sheet-title"
-	onclose={() => closedByAnAnswer || onClose()}
+	onclose={onClose}
 >
 	<div class="modal-box max-h-[90dvh] bg-base-100 p-4 pop-edge">
 		<div class="mb-3 flex items-center justify-between">
