@@ -51,6 +51,14 @@ describe('reportPeriodFor', () => {
 		expect(reportPeriodFor('week', '2026-10-01', NOW).label).toBe('semaine du 28 sept. au 4 oct.');
 	});
 
+	it("names the year of a day or week outside now's year", () => {
+		expect(reportPeriodFor('day', '2025-10-05', NOW).label).toBe('dimanche 5 oct. 2025');
+		expect(reportPeriodFor('week', '2025-10-08', NOW).label).toBe('semaine du 6 au 12 oct. 2025');
+		expect(reportPeriodFor('week', '2025-12-31', NOW).label).toBe(
+			'semaine du 29 déc. 2025 au 4 janv. 2026'
+		);
+	});
+
 	it('the current week has no next', () => {
 		expect(reportPeriodFor('week', '2026-10-13', NOW)).toMatchObject({
 			firstDate: '2026-10-12',

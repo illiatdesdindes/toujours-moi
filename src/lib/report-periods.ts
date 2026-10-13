@@ -48,6 +48,9 @@ const startInstant = (date: string) => fromParisDateAndTime(date, '00:00').toISO
 const formatDate = (date: string, options: Intl.DateTimeFormatOptions) =>
 	new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC', ...options }).format(asUtcDate(date));
 
+const isCurrentYear = (date: string, now: Date) =>
+	date.slice(0, 4) === toParisDateAndTime(now).date.slice(0, 4);
+
 type BucketLabels = (date: string, index: number) => { label: string; title: string };
 
 /** Each kind's rules in one place: its URL param and tab, its length, where it starts, its label and its sub-periods. */
@@ -71,7 +74,10 @@ const REPORT_PERIOD_RULES: Record<
 		previousLabel: 'la veille',
 		periodLength: { days: 1 },
 		firstDateOf: (date) => date,
-		labelOf: (firstDate, _endDate, now) => formatParisDay(new Date(startInstant(firstDate)), now),
+		labelOf: (firstDate, _endDate, now) => {
+			const dayText = formatParisDay(new Date(startInstant(firstDate)), now);
+			return isCurrentYear(firstDate, now) ? dayText : `${dayText} ${firstDate.slice(0, 4)}`;
+		},
 		buckets: null
 	},
 	week: {
@@ -80,14 +86,19 @@ const REPORT_PERIOD_RULES: Record<
 		previousLabel: 'la semaine précédente',
 		periodLength: { days: 7 },
 		firstDateOf: (date) => shiftDate(date, { days: -((asUtcDate(date).getUTCDay() + 6) % 7) }),
-		labelOf: (firstDate, endDate) => {
+		labelOf: (firstDate, endDate, now) => {
 			const lastDate = shiftDate(endDate, { days: -1 });
 			const sameMonth = firstDate.slice(0, 7) === lastDate.slice(0, 7);
+			const sameYear = firstDate.slice(0, 4) === lastDate.slice(0, 4);
+			// Another year than now's names its year, on both ends when the week straddles two.
+			const showYear = !isCurrentYear(firstDate, now) || !isCurrentYear(lastDate, now);
 			const firstDayText = formatDate(
 				firstDate,
 				sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'short' }
 			);
-			return `semaine du ${firstDayText} au ${formatDate(lastDate, { day: 'numeric', month: 'short' })}`;
+			const firstYearText = showYear && !sameYear ? ` ${firstDate.slice(0, 4)}` : '';
+			const lastYearText = showYear ? ` ${lastDate.slice(0, 4)}` : '';
+			return `semaine du ${firstDayText}${firstYearText} au ${formatDate(lastDate, { day: 'numeric', month: 'short' })}${lastYearText}`;
 		},
 		buckets: {
 			length: { days: 1 },

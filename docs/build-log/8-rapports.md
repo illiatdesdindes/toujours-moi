@@ -16,7 +16,7 @@
 - **Buckets are aggregated in SQL by joining a `json_each(?)` of `[start, end]` pairs**: one bound parameter for up to 31 buckets (D1 caps bound parameters at 100; a VALUES list would need 93). Options: one query per bucket (31 round trips in a batch) or bucketing in SQL by Paris day (DST maths in SQLite). All four queries go in one `db.batch`.
 - **Percent is rounded per row in TS** from the SQL sums, as the prototype; rows may add up to 99–101 %.
 - **Zero change shows "="**, as the prototype.
-- **The week label drops the first month when both ends share it** ("semaine du 5 au 11 oct.", the spec's example), else names both ("semaine du 28 sept. au 4 oct."). No year in week/day labels; Mois and Année show it.
+- **The week label drops the first month when both ends share it** ("semaine du 5 au 11 oct.", the spec's example), else names both ("semaine du 28 sept. au 4 oct."). Week and day labels name the year only outside the current Paris year (see the QA decision below); Mois and Année always show it.
 - **The profile switcher keeps the page's other query params** (`profilePageHref` with `page.url.searchParams`, in `+layout.svelte`), so switching to Famille on Rapports stays on the same period. The dock/sidebar tabs still carry only `?profil=`.
 - **`ReportStats` lives in `domain.ts`** so the client component can type its props without importing a `server/` module.
 - **Deactivated people and archived types still count** (joins without active filters), as Historique (spec Q2, Q10); deleted chores never do.
@@ -28,6 +28,7 @@
 - **Each period kind's rules live in one map** (review): `REPORT_PERIOD_RULES` in `report-periods.ts` holds, per kind, the `?periode=` value, tab label, previous label, period length, first-date rule, label and sub-period rules; `REPORT_PERIOD_TABS` is derived from it. Replaces three `kind ===` cascades and three side Records.
 - **Names** (review): `ReportStats.buckets` → `bucketTotals` (the minutes; `ReportPeriod.buckets` stays the boundaries, typed `ReportBucket`), and `ReportOverTimeBars`' `bucketStats`/`bucket` → `bucketTotals`/`bucketTotal`; `toDate` → `formatIsoDate`; `STEP` → each rule's `periodLength`; `from` → `firstDayText`; `total` → `periodTotals`.
 - **The switcher's hrefs are tested on the server render** (review): `test/profile-switcher.test.ts` checks that on `/rapports?periode=mois&date=…` the Famille and "yourself" options keep the period, and the tabs carry only `?profil=`.
+- **QA (minor): year in day/week labels outside the current year.** Options: always show the year (noisy for the common case, the spec's example has none), never (QA: past years look like this year), or only when the period is not in now's Paris year. Picked the last: "dimanche 5 oct. 2025", "semaine du 6 au 12 oct. 2025"; a week straddling two years names both ("semaine du 29 déc. 2025 au 4 janv. 2026") once either end leaves the current year. Done in `report-periods.ts`, not in the shared `formatParisDay` (Historique's recent-days rows don't need it). Test in `report-periods.test.ts`.
 
 ## Deviations from spec
 
