@@ -12,22 +12,50 @@
 	let { data, form } = $props();
 	const showToast = getShowToast();
 
+	/** Forms whose save is in flight: a second tap is dropped, so a double tap adds one type, not two. */
+	const formsBeingSaved = new WeakSet<HTMLFormElement>();
+
 	/**
 	 * Saves, reloads the page's data, and says how it went in the toast. A button's
-	 * `data-success-message` overrides `successMessage`; `reset` empties an Ajouter form.
+	 * `data-success-message` overrides `successMessage`, which may read the submitted fields (the
+	 * new name, not the old one). `isAddForm`: emptied on success, kept as typed on a refusal; any
+	 * other form shows the saved values again on a refusal, the toast saying why.
 	 */
 	const saveWithToast =
-		(successMessage: string, { reset = false } = {}): SubmitFunction =>
-		({ submitter }) => {
+		(
+			successMessage: string | ((formData: FormData) => string),
+			{ isAddForm = false } = {}
+		): SubmitFunction =>
+		({ formElement, formData, submitter, cancel }) => {
+			if (formsBeingSaved.has(formElement)) return cancel();
+			formsBeingSaved.add(formElement);
 			// Read before the reload re-renders the button for the new state.
-			const message = (submitter as HTMLElement | null)?.dataset.successMessage ?? successMessage;
+			const message =
+				(submitter as HTMLElement | null)?.dataset.successMessage ??
+				(typeof successMessage === 'string' ? successMessage : successMessage(formData));
 			return async ({ result, update }) => {
-				await update({ reset });
-				if (result.type === 'success') showToast(message);
-				else if (result.type === 'failure') showToast(String(result.data?.message ?? 'Refusé'));
-				else showToast('Erreur du serveur : réessaie');
+				try {
+					if (result.type === 'error') {
+						showToast(
+							navigator.onLine
+								? 'Erreur du serveur : réessaie'
+								: 'Pas de réseau : réessaie quand il revient'
+						);
+						return;
+					}
+					if (result.type === 'failure' && !isAddForm) formElement.reset();
+					// A refusal reloads too: it may come from a change made elsewhere (the last admin).
+					await update({ reset: isAddForm, refreshAll: true });
+					if (result.type === 'success') showToast(message);
+					else if (result.type === 'failure') showToast(String(result.data?.message ?? 'Refusé'));
+				} finally {
+					formsBeingSaved.delete(formElement);
+				}
 			};
 		};
+
+	const submittedField = (formData: FormData, fieldName: string) =>
+		String(formData.get(fieldName) ?? '').trim();
 
 	/** As prototype 02: the first palette colour nobody wears yet, so two people don't share one. */
 	const newUserColourKey = $derived(
@@ -70,7 +98,9 @@
 					method="POST"
 					action="?/updatePersonDetails"
 					class="flex flex-wrap items-center gap-2"
-					use:enhance={saveWithToast(`${child.name} enregistré·e`)}
+					use:enhance={saveWithToast(
+						(formData) => `${submittedField(formData, 'name')} enregistré·e`
+					)}
 				>
 					<input type="hidden" name="id" value={child.id} />
 					<PersonNameInput class="input w-32 input-sm" value={child.name} aria-label="Prénom" />
@@ -100,35 +130,37 @@
 				<form
 					method="POST"
 					action="?/updateUserAsAdmin"
-					class={[
-						'space-y-2 border-b-2 border-base-content/15 pb-3 text-sm',
-						!userAccount.isActive && 'opacity-60'
-					]}
-					use:enhance={saveWithToast(`${userAccount.name} enregistré·e`)}
+					class="space-y-2 border-b-2 border-base-content/15 pb-3 text-sm"
+					use:enhance={saveWithToast(
+						(formData) => `${submittedField(formData, 'name')} enregistré·e`
+					)}
 				>
 					<input type="hidden" name="id" value={userAccount.id} />
-					<div class="flex flex-wrap items-center gap-2">
-						<PersonColourDot colourKey={userAccount.colourKey} />
-						<PersonNameInput
-							class="input w-32 input-sm"
-							value={userAccount.name}
-							aria-label="Prénom"
-						/>
-						{#if userAccount.isLastActiveAdmin}
-							<input type="hidden" name="role" value={userAccount.role} />
-						{/if}
-						<UserRoleSelect
-							class="select w-28 select-sm"
-							selectedRole={userAccount.role}
-							disabled={userAccount.isLastActiveAdmin}
-							title={userAccount.isLastActiveAdmin
-								? 'Il faut toujours au moins un admin actif'
-								: undefined}
-						/>
-						{#if !userAccount.isActive}<span class="badge badge-sm">désactivé·e</span>{/if}
+					<!-- Dimmed when deactivated, all but the buttons: Réactiver must not look disabled. -->
+					<div class={['space-y-2', !userAccount.isActive && 'opacity-60']}>
+						<div class="flex flex-wrap items-center gap-2">
+							<PersonColourDot colourKey={userAccount.colourKey} />
+							<PersonNameInput
+								class="input w-32 input-sm"
+								value={userAccount.name}
+								aria-label="Prénom"
+							/>
+							{#if userAccount.isLastActiveAdmin}
+								<input type="hidden" name="role" value={userAccount.role} />
+							{/if}
+							<UserRoleSelect
+								class="select w-28 select-sm"
+								selectedRole={userAccount.role}
+								disabled={userAccount.isLastActiveAdmin}
+								title={userAccount.isLastActiveAdmin
+									? 'Il faut toujours au moins un admin actif'
+									: undefined}
+							/>
+							{#if !userAccount.isActive}<span class="badge badge-sm">désactivé·e</span>{/if}
+						</div>
+						<p class="truncate opacity-70">{userAccount.email}</p>
+						<PersonalColourPicker selectedColourKey={userAccount.colourKey} size="sm" />
 					</div>
-					<p class="truncate opacity-70">{userAccount.email}</p>
-					<PersonalColourPicker selectedColourKey={userAccount.colourKey} size="sm" />
 					<div class="flex flex-wrap gap-2">
 						<button class="btn btn-sm">Enregistrer</button>
 						<button
@@ -151,7 +183,7 @@
 				method="POST"
 				action="?/addUser"
 				class="space-y-2 text-sm"
-				use:enhance={saveWithToast('Membre ajouté', { reset: true })}
+				use:enhance={saveWithToast('Membre ajouté', { isAddForm: true })}
 			>
 				<h3 class="font-semibold">Ajouter un membre</h3>
 				<div class="grid grid-cols-2 gap-2 md:grid-cols-3">
@@ -204,11 +236,10 @@
 				<form
 					method="POST"
 					action="?/updateChoreType"
-					class={[
-						'space-y-2 border-b-2 border-base-content/15 pb-2 text-sm',
-						choreType.isArchived && 'opacity-60'
-					]}
-					use:enhance={saveWithToast(`${choreType.shortLabel} enregistré`)}
+					class="space-y-2 border-b-2 border-base-content/15 pb-2 text-sm"
+					use:enhance={saveWithToast(
+						(formData) => `${submittedField(formData, 'shortLabel')} enregistré`
+					)}
 				>
 					<input type="hidden" name="id" value={choreType.id} />
 					<ChoreTypeFields {choreType}>
@@ -248,7 +279,7 @@
 				method="POST"
 				action="?/addChoreType"
 				class="space-y-2 pt-1 text-sm"
-				use:enhance={saveWithToast('Type ajouté', { reset: true })}
+				use:enhance={saveWithToast('Type ajouté', { isAddForm: true })}
 			>
 				<h3 class="font-semibold">Ajouter un type</h3>
 				<ChoreTypeFields>

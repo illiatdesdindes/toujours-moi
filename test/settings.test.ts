@@ -276,6 +276,26 @@ describe('Réglages', () => {
 				400,
 				'Icône invalide'
 			);
+			expectRefused(
+				await act(PAPA, 'addChoreType', { icon: '🧽', shortLabel: 'éponge' }),
+				400,
+				'Ce type existe déjà'
+			);
+		});
+
+		it('keeps a full label left as the short one in step with a rename', async () => {
+			await act(PAPA, 'addChoreType', { icon: '🧽', shortLabel: 'Vitres', fullLabel: '' });
+			const added = (await listPickableChoreTypes(env.DB)).at(-1)!;
+			await act(PAPA, 'updateChoreType', {
+				id: added.id,
+				icon: '🪟',
+				shortLabel: 'Fenêtres',
+				fullLabel: 'Vitres'
+			});
+			expect((await listPickableChoreTypes(env.DB)).at(-1)).toMatchObject({
+				shortLabel: 'Fenêtres',
+				fullLabel: 'Fenêtres'
+			});
 		});
 
 		it('renames and changes the icon', async () => {

@@ -67,6 +67,20 @@ export const addChoreType = async (
 	const choreTypeDetails = parseChoreTypeDetails(fields);
 	if (typeof choreTypeDetails === 'string') return refused(400, choreTypeDetails);
 	const rows = await listCatalogRows(db);
+	// ponytail: a read then a write, so two requests at the same instant still both pass; the page
+	// ignores a second tap while the first is in flight.
+	const sameLabelRow = rows.find(
+		(row) =>
+			row.short_label.toLocaleLowerCase('fr') ===
+			choreTypeDetails.shortLabel.toLocaleLowerCase('fr')
+	);
+	if (sameLabelRow)
+		return refused(
+			400,
+			sameLabelRow.archived_at
+				? 'Ce type existe déjà, archivé : restaure-le'
+				: 'Ce type existe déjà'
+		);
 	const choreTypeId = uuidV7();
 	await saveWithVersion(
 		db,
@@ -85,7 +99,7 @@ export const addChoreType = async (
 	return SAVED;
 };
 
-/** Rename and change the icon; past chores show the new labels. */
+/** Rename and change the icon; past chores show the new labels. A full label still equal to the short one follows its rename. */
 export const updateChoreType = async (
 	db: D1Database,
 	viewer: Viewer,
@@ -96,13 +110,17 @@ export const updateChoreType = async (
 	if (!row) return NOT_FOUND;
 	const choreTypeDetails = parseChoreTypeDetails(fields);
 	if (typeof choreTypeDetails === 'string') return refused(400, choreTypeDetails);
+	const isFullLabelLeftAsShortLabel =
+		row.full_label === row.short_label && choreTypeDetails.fullLabel === row.full_label;
 	await saveWithVersion(
 		db,
 		'chore_types',
 		row.id,
 		{
 			short_label: choreTypeDetails.shortLabel,
-			full_label: choreTypeDetails.fullLabel,
+			full_label: isFullLabelLeftAsShortLabel
+				? choreTypeDetails.shortLabel
+				: choreTypeDetails.fullLabel,
 			icon: choreTypeDetails.icon
 		},
 		viewer.id

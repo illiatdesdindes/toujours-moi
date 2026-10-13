@@ -12,6 +12,7 @@ The ticket has no "Done when" list; its "What" items are the criteria.
 - [x] Tests: unit `settings-fields.test.ts` (names, palette, email, role, single emoji, labels) and the policy matrix; integration `test/settings.test.ts` (sections per role, each action per role, versions, last-admin guard, deactivated login refused then reactivated, catalog add / rename / reorder / archive / restore).
 - [x] Browser pass at 390 px and 1280 px as Papa (colour change re-tints, add / move / archive / restore a type, invalid emoji toast, add a member + reminder, deactivate / reactivate), Maman (Mon profil + Enfants, child colour saved) and Léa (Mon profil only, empty name blocked). No horizontal scroll. `DEV_VIEWER_EMAIL` put back to Papa; the test rows removed from the local D1.
 - [x] `npm run lint && npm run check && npm test` green.
+- [x] QA findings 1–10 applied (see QA fixes); tests added for the duplicate-label refusal and the full label following a rename.
 
 ## Decisions
 
@@ -41,6 +42,19 @@ The ticket has no "Done when" list; its "What" items are the criteria.
 - **`moveChoreType` checks `isUuidV7` first**, as its siblings; it keeps its own `findIndex` because it needs the whole catalog to renumber.
 - **Ajouter un membre starts on the first palette colour nobody wears yet** (deactivated users count), as prototype 02's `addMember`; tomato when all 8 are taken.
 
+### QA fixes
+
+- **Form resets come back to the saved values** (QA 1, 3, 7): `PersonalColourPicker` sets `defaultChecked` as well as `checked`, `PersonNameInput` and `ChoreTypeFields` set `defaultValue` as well as `value` (Svelte's `value` / `checked` set only the property; the role select's `<option selected>` already sets the attribute). So Ajouter un membre's reset after an add checks the first free colour again instead of none.
+- **A refusal reloads the page and resets the refused edit form** (QA 3, 7): `update({ refreshAll: true })` on a failure too, since a refusal may come from a change made elsewhere (the last admin). An edit row then shows the saved values again and the toast says why; options were "keep what was typed" (stale, the QA bug) or "reset" (a typo in a rename has to be retyped). Picked reset: the edits are one or two fields. Ajouter forms keep what was typed on a refusal (an email typo shouldn't wipe the form).
+- **A second tap while a form's save is in flight is dropped** (QA 2): a `WeakSet` of forms being saved in `saveWithToast`, `cancel()` on a repeat. It also covers ↑ ↓ (two fast taps move one place, not two). Plus a server check: Ajouter un type refuses a short label the catalog already has, case-insensitive, archived ones included ("Ce type existe déjà, archivé : restaure-le"). It's a read then a write, so it can't stop two simultaneous requests alone (`ponytail:` note); the page guard does. Renaming onto an existing label is not checked (no QA finding; the admin sees both rows).
+- **Success toasts name what was saved** (QA 4): `saveWithToast` takes a function of the submitted `FormData` (`submittedField(formData, 'name' | 'shortLabel')`, trimmed as the server stores it).
+- **A full label equal to the short label follows its rename** (QA 5), in `updateChoreType`: when the stored full label equals the stored short label and the submitted full label is unchanged, the new short label is stored as both. Not "store blank and fall back on read": that changes what the picker, Historique and Rapports read, for one edge case.
+- **Offline**: a fetch that never reached the server says "Pas de réseau : réessaie quand il revient" (`navigator.onLine`), as Historique; a real server error keeps "Erreur du serveur : réessaie" (QA 6). An `error` result no longer calls `update()` (it would apply the error page for a dropped connection).
+- **Swatch focus**: outline in `primary`, 6px offset, so 2px clear of the selected ring (QA 8).
+- **Deactivated / archived rows dim their fields, not their buttons** (QA 9): Réactiver and Restaurer stay at full contrast. The prototype dims the whole row; this departs from it on purpose (accessibility). `ChoreTypeFields` now takes a `ChoreTypeCatalogEntry` for `isArchived`.
+- **Full label on a phone** (QA 10): the full-label row wraps; under `sm` the field is full width and Enregistrer / Archiver go below it.
+- Checked in the browser (vite dev, Papa): two adds in a row (second add works, default colour moves on), double tap on Ajouter un type (one row), refused blank name restored, rename toast names the new label and the full label follows, 390 px rows readable with no horizontal scroll. Test rows removed from the local D1 afterwards.
+
 ## Deviations from spec
 
 Departures from prototype 02 (the spec allows each; recorded so they're visible here):
@@ -49,7 +63,9 @@ Departures from prototype 02 (the spec allows each; recorded so they're visible 
 - Colours are a radio group inside each form, not tap-to-save swatches (Decisions: colour is a radio group).
 - Types de tâches has a full-label field; the prototype shows icon + short label only. Spec Q2 has the full label.
 - Membres rows edit the name; the prototype shows it read-only. Spec Q10: "Edit name / colour / role".
+- Deactivated members and archived types dim their fields but not their buttons; the prototype dims the whole row (QA 9: Réactiver / Restaurer looked disabled).
 
 ## Skipped review/QA findings
 
 - None skipped. Finding 10's "fixed default colour for new members" is no longer a deviation: it now follows the prototype.
+- QA findings: none skipped.

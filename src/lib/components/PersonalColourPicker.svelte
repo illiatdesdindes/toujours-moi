@@ -24,6 +24,7 @@
 	};
 </script>
 
+<!-- `defaultChecked` too: a form reset (Ajouter's empty-on-success, a refused edit) comes back to the selected colour, not to none. Focus: a primary outline 2px clear of the selected ring. -->
 <fieldset class="flex flex-wrap gap-2">
 	<legend class="sr-only">Couleur</legend>
 	{#each COLOUR_KEYS as colourKey (colourKey)}
@@ -33,12 +34,13 @@
 				name="colourKey"
 				value={colourKey}
 				checked={colourKey === selectedColourKey}
+				defaultChecked={colourKey === selectedColourKey}
 				class="peer sr-only"
 				aria-label={COLOUR_LABELS[colourKey]}
 			/>
 			<span
 				class={[
-					'block rounded-full border-2 border-base-content peer-checked:ring-2 peer-checked:ring-base-content peer-checked:ring-offset-2 peer-checked:ring-offset-base-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4',
+					'block rounded-full border-2 border-base-content peer-checked:ring-2 peer-checked:ring-base-content peer-checked:ring-offset-2 peer-checked:ring-offset-base-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-6 peer-focus-visible:outline-primary',
 					size === 'sm' ? 'size-6' : 'size-8'
 				]}
 				style:background={PERSONAL_COLOURS[colourKey].background}
