@@ -85,6 +85,7 @@
 			? null
 			: PERSONAL_COLOURS[selectedProfile?.person.colourKey ?? data.viewer.colourKey]
 	);
+	const viewerColour = $derived(PERSONAL_COLOURS[data.viewer.colourKey]);
 	// Off-tab routes are only the error page for now.
 	const pageTitle = $derived(
 		currentTab?.label ??
@@ -97,7 +98,14 @@
 	<title>{pageTitle} · TJM</title>
 </svelte:head>
 
-<InstallScreen />
+<!-- The install screen wears the viewer's colour, as in prototype 02 (its Pop button needs a fill other than the navy edge). -->
+<div
+	class="contents"
+	style:--color-primary={viewerColour.background}
+	style:--color-primary-content={viewerColour.content}
+>
+	<InstallScreen />
+</div>
 
 <!-- Hidden behind the install screen on a phone tab that isn't installed (spec Q12). -->
 <div
