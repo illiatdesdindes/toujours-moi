@@ -112,13 +112,18 @@ describe('POST /api/chores', () => {
 		expect(res.status).toBe(400);
 	});
 
-	it('lets a parent log for a child, and never a child for someone else', async () => {
+	it('lets a parent log for a child, the admin for the other parent, and never a child for someone else', async () => {
 		const forLea = newChore({ performerUserId: CHILD_ID });
 		expect((await logChore(forLea, 'maman@exemple.fr')).status).toBe(201);
+		const papaForMaman = newChore({ performerUserId: PARENT_ID });
+		expect((await logChore(papaForMaman, 'papa@exemple.fr')).status).toBe(201);
+		const mamanForPapa = newChore({ performerUserId: ADMIN_ID });
+		expect((await logChore(mamanForPapa, 'maman@exemple.fr')).status).toBe(422);
 		const leaForMaman = newChore({ performerUserId: PARENT_ID });
 		expect((await logChore(leaForMaman, 'lea@exemple.fr')).status).toBe(422);
 		expect(await choreRows()).toEqual([
-			expect.objectContaining({ performer_user_id: CHILD_ID, author_user_id: PARENT_ID })
+			expect.objectContaining({ performer_user_id: CHILD_ID, author_user_id: PARENT_ID }),
+			expect.objectContaining({ performer_user_id: PARENT_ID, author_user_id: ADMIN_ID })
 		]);
 	});
 
