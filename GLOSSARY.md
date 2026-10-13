@@ -8,6 +8,10 @@ brackets when there is one.
 - **User**: a family member with a row in `users`. Has a role, a name and a colour. Deactivated =
   `deleted_at` is set (soft delete); a deactivated user can't get in. Code type `User`
   (`domain.ts`), read through `src/lib/server/users.ts`; not "member".
+- **User account**: a user as Membres lists it, deactivated ones too, with email and status
+  (`UserAccount`, `listAllUsers()`). Written by `user-settings.ts` (spec Q10).
+- **Personal colour** [couleur]: one of the 8 palette colours a user wears (`colour_key`, picked
+  with `PersonalColourPicker.svelte`); it tints the app when their view is on screen.
 - **Role**: `admin`, `parent` or `child` [admin, parent, enfant]. Spec Q8.
 - **Admin**: the role that manages members and chore types. There is always at least one **active
   admin** (spec Q10); a deactivated admin doesn't count.
@@ -32,7 +36,11 @@ brackets when there is one.
 - **Chore** [tâche]: one thing someone did, for a duration (multiple of 15 min, 15 min to 24 h),
   from a start time (`started_at`, UTC). Never in the future (spec Q3).
 - **Chore type** [type de tâche]: a catalog entry (icon emoji, short and full label). Archived types
-  drop out of the picker; past chores keep them (spec Q2).
+  drop out of the picker; past chores keep them (spec Q2). The **chore type catalog** is every
+  non-deleted type, archived ones too, as Réglages' Types de tâches lists it
+  (`listChoreTypeCatalog()`).
+- **Réglages** [Réglages]: Mon profil (everyone), Enfants (parents), Membres and Types de tâches
+  (the admin); every write is a form action of `/reglages` (spec Q10).
 - **Performer** [fait par]: who did the chore (`performer_user_id`). **Author**: who logged it
   (`author_user_id`), set by the server, never shown. A chore "logged for" someone has a performer
   who isn't its author.

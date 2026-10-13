@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	isSingleEmoji,
 	parseChoreTypeLabels,
-	parseNewMember,
+	parseNewUser,
 	parsePersonDetails
 } from './settings-fields';
 
@@ -24,10 +24,10 @@ describe('parsePersonDetails', () => {
 	});
 });
 
-describe('parseNewMember', () => {
+describe('parseNewUser', () => {
 	it('lowercases the email and checks the role', () => {
 		expect(
-			parseNewMember({
+			parseNewUser({
 				email: ' Noe@Exemple.FR ',
 				name: 'Noé',
 				role: 'child',
@@ -45,7 +45,7 @@ describe('parseNewMember', () => {
 		[{ email: 'noe@exemple.fr', name: 'Noé', role: 'boss', colourKey: 'mustard' }, 'Rôle inconnu'],
 		[{ email: 'noe@exemple.fr', name: '', role: 'child', colourKey: 'mustard' }, 'Prénom manquant']
 	])('refuses %o: %s', (fields, message) => {
-		expect(parseNewMember(fields)).toBe(message);
+		expect(parseNewUser(fields)).toBe(message);
 	});
 });
 

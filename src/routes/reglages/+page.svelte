@@ -3,7 +3,7 @@
 	import { getShowToast } from '#lib/app-context.js';
 	import PersonColourDot from '#lib/components/PersonColourDot.svelte';
 	import PersonalColourPicker from '#lib/components/PersonalColourPicker.svelte';
-	import { USER_ROLES, type Member, type UserRole } from '#lib/domain.js';
+	import { USER_ROLES, type UserAccount, type UserRole } from '#lib/domain.js';
 	import { enhance, type SubmitFunction } from '$app/forms';
 
 	let { data, form } = $props();
@@ -15,23 +15,30 @@
 		child: 'enfant'
 	};
 
-	/** Saves, reloads the page's data, and says how it went in the toast. `reset` empties an Ajouter form. */
+	/**
+	 * Saves, reloads the page's data, and says how it went in the toast. A button's
+	 * `data-success-message` overrides `successMessage`; `reset` empties an Ajouter form.
+	 */
 	const saveWithToast =
 		(successMessage: string, { reset = false } = {}): SubmitFunction =>
-		() =>
-		async ({ result, update }) => {
-			await update({ reset });
-			if (result.type === 'success') showToast(successMessage);
-			else if (result.type === 'failure') showToast(String(result.data?.message ?? 'Refusé'));
-			else showToast('Erreur du serveur : réessaie');
+		({ submitter }) => {
+			// Read before the reload re-renders the button for the new state.
+			const message = (submitter as HTMLElement | null)?.dataset.successMessage ?? successMessage;
+			return async ({ result, update }) => {
+				await update({ reset });
+				if (result.type === 'success') showToast(message);
+				else if (result.type === 'failure') showToast(String(result.data?.message ?? 'Refusé'));
+				else showToast('Erreur du serveur : réessaie');
+			};
 		};
 
 	const activeAdminCount = $derived(
-		data.members?.filter((member) => member.isActive && member.role === 'admin').length ?? 0
+		data.userAccounts?.filter((userAccount) => userAccount.isActive && userAccount.role === 'admin')
+			.length ?? 0
 	);
 	/** Spec Q10: the server refuses it too; the page only greys it out. */
-	const isLastActiveAdmin = (member: Member) =>
-		member.isActive && member.role === 'admin' && activeAdminCount === 1;
+	const isLastActiveAdmin = (userAccount: UserAccount) =>
+		userAccount.isActive && userAccount.role === 'admin' && activeAdminCount === 1;
 </script>
 
 <div class="space-y-5">
@@ -90,72 +97,75 @@
 		</section>
 	{/if}
 
-	{#if data.members}
+	{#if data.userAccounts}
 		<section class="space-y-3 rounded-box bg-base-100 p-4 pop-edge" aria-labelledby="members">
 			<h2 id="members" class="font-bold">Membres</h2>
-			{#each data.members as member (member.id)}
-				{@const memberActionsFormId = `member-actions-${member.id}`}
+			{#each data.userAccounts as userAccount (userAccount.id)}
+				{@const userActionsFormId = `user-actions-${userAccount.id}`}
 				<!-- Désactiver / Réactiver post this form, so Entrée in the fields below stays Enregistrer. -->
 				<form
-					id={memberActionsFormId}
+					id={userActionsFormId}
 					method="POST"
 					hidden
-					use:enhance={saveWithToast(
-						member.isActive ? `${member.name} désactivé·e` : `${member.name} réactivé·e`
-					)}
+					use:enhance={saveWithToast(`${userAccount.name} enregistré·e`)}
 				>
-					<input type="hidden" name="id" value={member.id} />
+					<input type="hidden" name="id" value={userAccount.id} />
 				</form>
 				<form
 					method="POST"
-					action="?/updateMember"
+					action="?/updateUserAsAdmin"
 					class={[
 						'space-y-2 border-b-2 border-base-content/15 pb-3 text-sm',
-						!member.isActive && 'opacity-60'
+						!userAccount.isActive && 'opacity-60'
 					]}
-					use:enhance={saveWithToast(`${member.name} enregistré·e`)}
+					use:enhance={saveWithToast(`${userAccount.name} enregistré·e`)}
 				>
-					<input type="hidden" name="id" value={member.id} />
+					<input type="hidden" name="id" value={userAccount.id} />
 					<div class="flex flex-wrap items-center gap-2">
-						<PersonColourDot colourKey={member.colourKey} />
+						<PersonColourDot colourKey={userAccount.colourKey} />
 						<input
 							class="input w-32 input-sm"
 							name="name"
-							value={member.name}
+							value={userAccount.name}
 							required
 							maxlength="30"
 							aria-label="Prénom"
 						/>
-						{#if isLastActiveAdmin(member)}
-							<input type="hidden" name="role" value={member.role} />
+						{#if isLastActiveAdmin(userAccount)}
+							<input type="hidden" name="role" value={userAccount.role} />
 						{/if}
 						<select
 							class="select w-28 select-sm"
 							name="role"
 							aria-label="Rôle"
-							disabled={isLastActiveAdmin(member)}
-							title={isLastActiveAdmin(member)
+							disabled={isLastActiveAdmin(userAccount)}
+							title={isLastActiveAdmin(userAccount)
 								? 'Il faut toujours au moins un admin actif'
 								: undefined}
 						>
 							{#each USER_ROLES as role (role)}
-								<option value={role} selected={role === member.role}>{ROLE_LABELS[role]}</option>
+								<option value={role} selected={role === userAccount.role}
+									>{ROLE_LABELS[role]}</option
+								>
 							{/each}
 						</select>
-						{#if !member.isActive}<span class="badge badge-sm">désactivé·e</span>{/if}
+						{#if !userAccount.isActive}<span class="badge badge-sm">désactivé·e</span>{/if}
 					</div>
-					<p class="truncate opacity-70">{member.email}</p>
-					<PersonalColourPicker selectedColourKey={member.colourKey} size="sm" />
+					<p class="truncate opacity-70">{userAccount.email}</p>
+					<PersonalColourPicker selectedColourKey={userAccount.colourKey} size="sm" />
 					<div class="flex flex-wrap gap-2">
 						<button class="btn btn-sm">Enregistrer</button>
 						<button
 							class="btn btn-sm"
-							form={memberActionsFormId}
-							formaction={member.isActive ? '?/deactivateMember' : '?/reactivateMember'}
-							disabled={isLastActiveAdmin(member)}
-							title={isLastActiveAdmin(member)
+							form={userActionsFormId}
+							formaction={userAccount.isActive ? '?/deactivateUser' : '?/reactivateUser'}
+							data-success-message={userAccount.isActive
+								? `${userAccount.name} désactivé·e`
+								: `${userAccount.name} réactivé·e`}
+							disabled={isLastActiveAdmin(userAccount)}
+							title={isLastActiveAdmin(userAccount)
 								? 'Il faut toujours au moins un admin actif'
-								: undefined}>{member.isActive ? 'Désactiver' : 'Réactiver'}</button
+								: undefined}>{userAccount.isActive ? 'Désactiver' : 'Réactiver'}</button
 						>
 					</div>
 				</form>
@@ -163,7 +173,7 @@
 
 			<form
 				method="POST"
-				action="?/addMember"
+				action="?/addUser"
 				class="space-y-2 text-sm"
 				use:enhance={saveWithToast('Membre ajouté', { reset: true })}
 			>
@@ -196,11 +206,11 @@
 				<PersonalColourPicker selectedColourKey="sage" size="sm" />
 				<button class="btn btn-primary btn-sm">Ajouter</button>
 			</form>
-			{#if form && 'addedMemberEmail' in form}
+			{#if form && 'addedUserEmail' in form}
 				<div role="alert" class="alert text-sm alert-warning">
 					<span
-						>Ajoute aussi <b>{form.addedMemberEmail}</b> à la politique Cloudflare Access, sinon cette
-						personne ne pourra pas se connecter.</span
+						>Ajoute aussi <b>{form.addedUserEmail}</b> à la politique Cloudflare Access, sinon cette personne
+						ne pourra pas se connecter.</span
 					>
 				</div>
 			{/if}
@@ -217,7 +227,7 @@
 					id={choreTypeActionsFormId}
 					method="POST"
 					hidden
-					use:enhance={saveWithToast(`${choreType.shortLabel} : c'est fait`)}
+					use:enhance={saveWithToast(`${choreType.shortLabel} déplacé`)}
 				>
 					<input type="hidden" name="id" value={choreType.id} />
 				</form>
@@ -276,6 +286,9 @@
 							class="btn w-24 btn-sm"
 							form={choreTypeActionsFormId}
 							formaction={choreType.isArchived ? '?/restoreChoreType' : '?/archiveChoreType'}
+							data-success-message={choreType.isArchived
+								? `${choreType.shortLabel} restauré`
+								: `${choreType.shortLabel} archivé`}
 							>{choreType.isArchived ? 'Restaurer' : 'Archiver'}</button
 						>
 					</div>

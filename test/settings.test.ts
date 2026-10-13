@@ -147,7 +147,7 @@ describe('Réglages', () => {
 
 	describe('Membres', () => {
 		it('adds a member who can then get in, and reminds the admin of the Access policy', async () => {
-			const answer = await act(PAPA, 'addMember', {
+			const answer = await act(PAPA, 'addUser', {
 				email: ' Mamie@Exemple.fr ',
 				name: 'Mamie',
 				role: 'parent',
@@ -165,7 +165,7 @@ describe('Réglages', () => {
 			expect((await fetchPage('/', await accessHeaders('mamie@exemple.fr'))).status).toBe(200);
 
 			expectRefused(
-				await act(PAPA, 'addMember', {
+				await act(PAPA, 'addUser', {
 					email: 'MAMIE@exemple.fr',
 					name: 'Mamie 2',
 					role: 'parent',
@@ -178,19 +178,19 @@ describe('Réglages', () => {
 
 		it('is for the admin only', async () => {
 			const fields = { email: 'x@exemple.fr', name: 'X', role: 'admin', colourKey: 'sage' };
-			expectRefused(await act(MAMAN, 'addMember', fields), 403, 'Réservé à l’admin');
+			expectRefused(await act(MAMAN, 'addUser', fields), 403, 'Réservé à l’admin');
 			expectRefused(
-				await act(MAMAN, 'updateMember', { id: PARENT_ID, ...fields }),
+				await act(MAMAN, 'updateUserAsAdmin', { id: PARENT_ID, ...fields }),
 				403,
 				'Réservé à l’admin'
 			);
-			expectRefused(await act(LEA, 'deactivateMember', { id: CHILD_ID }), 403, 'Réservé');
+			expectRefused(await act(LEA, 'deactivateUser', { id: CHILD_ID }), 403, 'Réservé');
 			expect(await userRow(PARENT_ID)).toMatchObject({ role: 'parent', update_count: 0 });
 		});
 
 		it('edits name, colour and role', async () => {
 			expect(
-				await act(PAPA, 'updateMember', {
+				await act(PAPA, 'updateUserAsAdmin', {
 					id: PARENT_ID,
 					name: 'Maman',
 					colourKey: 'tomato',
@@ -200,7 +200,7 @@ describe('Réglages', () => {
 			expect(await userRow(PARENT_ID)).toMatchObject({ role: 'admin', colour_key: 'tomato' });
 			// Now two admins: Papa may step down.
 			expect(
-				await act(PAPA, 'updateMember', {
+				await act(PAPA, 'updateUserAsAdmin', {
 					id: ADMIN_ID,
 					name: 'Papa',
 					colourKey: 'cornflower',
@@ -213,12 +213,12 @@ describe('Réglages', () => {
 		it("doesn't let the last active admin demote or deactivate themselves", async () => {
 			const demote = { id: ADMIN_ID, name: 'Papa', colourKey: 'cornflower', role: 'parent' };
 			expectRefused(
-				await act(PAPA, 'updateMember', demote),
+				await act(PAPA, 'updateUserAsAdmin', demote),
 				400,
 				'Il faut toujours au moins un admin actif'
 			);
 			expectRefused(
-				await act(PAPA, 'deactivateMember', { id: ADMIN_ID }),
+				await act(PAPA, 'deactivateUser', { id: ADMIN_ID }),
 				400,
 				'Il faut toujours au moins un admin actif'
 			);
@@ -230,7 +230,7 @@ describe('Réglages', () => {
 		});
 
 		it('deactivates (refused at login, chores kept) and reactivates', async () => {
-			expect(await act(PAPA, 'deactivateMember', { id: CHILD_ID })).toMatchObject({
+			expect(await act(PAPA, 'deactivateUser', { id: CHILD_ID })).toMatchObject({
 				type: 'success'
 			});
 			expect(await userRow(CHILD_ID)).toMatchObject({
@@ -240,7 +240,7 @@ describe('Réglages', () => {
 			expect((await fetchPage('/', await accessHeaders(LEA))).status).toBe(403);
 			expect(await pageHtml(PAPA)).toContain('Réactiver');
 
-			expect(await act(PAPA, 'reactivateMember', { id: CHILD_ID })).toMatchObject({
+			expect(await act(PAPA, 'reactivateUser', { id: CHILD_ID })).toMatchObject({
 				type: 'success'
 			});
 			expect(await userRow(CHILD_ID)).toMatchObject({ deleted_at: null, deleted_by_user_id: null });

@@ -28,7 +28,7 @@ export const parseRole = (fieldValue: unknown): UserRole | null =>
 	USER_ROLES.includes(fieldValue as UserRole) ? (fieldValue as UserRole) : null;
 
 /** Membres' Ajouter: the email (lowercased, as `users` stores it), prénom, role and colour. */
-export const parseNewMember = (fields: FormFields) => {
+export const parseNewUser = (fields: FormFields) => {
 	const email = trimmed(fields.email).toLowerCase();
 	// ponytail: a shape check only; Cloudflare Access is what proves the address.
 	if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))

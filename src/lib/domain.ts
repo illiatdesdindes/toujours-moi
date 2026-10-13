@@ -35,7 +35,7 @@ export type PersonRef = { id: string; role: UserRole };
 export type User = PersonRef & { name: string; colourKey: ColourKey };
 
 /** A Membres row (spec Q10): any user, deactivated ones too. */
-export type Member = User & { email: string; isActive: boolean };
+export type UserAccount = User & { email: string; isActive: boolean };
 
 /** A chore type as Types de tâches lists it (spec Q2): archived ones too, in picker order. */
 export type ChoreTypeCatalogEntry = ChoreTypeOption & { isArchived: boolean };

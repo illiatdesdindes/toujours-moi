@@ -3,7 +3,7 @@
 import type { ChoreTypeCatalogEntry, ChoreTypeOption, Viewer } from '../domain';
 import { isUuidV7, uuidV7 } from '../uuid';
 import { canManageChoreTypes } from './access-policy';
-import type { SettingsAnswer } from './member-settings';
+import type { SettingsAnswer } from './user-settings';
 import { saveWithVersion } from './record-versions';
 import { parseChoreTypeLabels } from './settings-fields';
 
