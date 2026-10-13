@@ -2,19 +2,21 @@
 // saveWithVersion() and every decision from the access policy.
 import type { UserRole, Viewer } from '../domain';
 import { isUuidV7, uuidV7 } from '../uuid';
-import { canEditPersonDetails, canManageMembers, keepsAnActiveAdmin } from './access-policy';
+import { canEditPersonDetails, canManageUsers, keepsAnActiveAdmin } from './access-policy';
 import { saveWithVersion } from './record-versions';
-import { parseNewUser, parsePersonDetails, parseRole } from './settings-fields';
+import {
+	ADMINS_ONLY,
+	parseNewUser,
+	parsePersonDetails,
+	parseRole,
+	refused,
+	SAVED,
+	type FormFields,
+	type SettingsAnswer
+} from './settings-fields';
 
-export type SettingsAnswer = { status: 200 } | { status: 400 | 403 | 404; message: string };
-
-const refused = (status: 400 | 403 | 404, message: string) => ({ status, message }) as const;
-const SAVED = { status: 200 } as const;
 const NOT_FOUND = refused(404, 'Personne introuvable');
-const ADMINS_ONLY = refused(403, 'Réservé à l’admin');
 const LAST_ADMIN = refused(400, 'Il faut toujours au moins un admin actif');
-
-type FormFields = Record<string, unknown>;
 type UserStatusRow = { id: string; role: UserRole; deleted_at: string | null };
 
 const findUser = (db: D1Database, userId: unknown) =>
@@ -38,7 +40,7 @@ const keepsAnActiveAdminAfter = async (
 	change: 'deactivate' | { role: UserRole }
 ) =>
 	keepsAnActiveAdmin({
-		member: { ...user, isActive: !user.deleted_at },
+		user: { ...user, isActive: !user.deleted_at },
 		activeAdminCount: await countActiveAdmins(db),
 		change
 	});
@@ -65,13 +67,16 @@ export const updatePersonDetails = async (
 	return SAVED;
 };
 
-/** Membres' Ajouter. The admin then adds the same email to the Access policy (spec Q1). */
+/**
+ * Membres' Ajouter. The admin then adds the same email to the Access policy (spec Q1), so the
+ * answer carries the email as saved.
+ */
 export const addUser = async (
 	db: D1Database,
 	viewer: Viewer,
 	fields: FormFields
-): Promise<SettingsAnswer> => {
-	if (!canManageMembers(viewer)) return ADMINS_ONLY;
+): Promise<SettingsAnswer<{ addedUserEmail: string }>> => {
+	if (!canManageUsers(viewer)) return ADMINS_ONLY;
 	const newUser = parseNewUser(fields);
 	if (typeof newUser === 'string') return refused(400, newUser);
 	const saved = await saveWithVersion(
@@ -82,7 +87,9 @@ export const addUser = async (
 		viewer.id
 	);
 	// The only UNIQUE a new id can lose to is the email, a deactivated user’s included.
-	return saved ? SAVED : refused(400, 'Cette adresse e-mail a déjà un profil');
+	return saved
+		? { ...SAVED, addedUserEmail: newUser.email }
+		: refused(400, 'Cette adresse e-mail a déjà un profil');
 };
 
 /** Membres' edit: name, colour and role, of anyone; the last active admin stays admin. */
@@ -91,7 +98,7 @@ export const updateUserAsAdmin = async (
 	viewer: Viewer,
 	fields: FormFields
 ): Promise<SettingsAnswer> => {
-	if (!canManageMembers(viewer)) return ADMINS_ONLY;
+	if (!canManageUsers(viewer)) return ADMINS_ONLY;
 	const user = await findUser(db, fields.id);
 	if (!user) return NOT_FOUND;
 	const details = parsePersonDetails(fields);
@@ -120,7 +127,7 @@ export const setUserActive = async (
 	isActive: boolean,
 	now = new Date()
 ): Promise<SettingsAnswer> => {
-	if (!canManageMembers(viewer)) return ADMINS_ONLY;
+	if (!canManageUsers(viewer)) return ADMINS_ONLY;
 	const user = await findUser(db, userId);
 	if (!user) return NOT_FOUND;
 	if (isActive === !user.deleted_at) return SAVED;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	isSingleEmoji,
-	parseChoreTypeLabels,
+	parseChoreTypeDetails,
 	parseNewUser,
 	parsePersonDetails
 } from './settings-fields';
@@ -58,13 +58,15 @@ describe('isSingleEmoji', () => {
 	});
 });
 
-describe('parseChoreTypeLabels', () => {
+describe('parseChoreTypeDetails', () => {
 	it('trims, and takes the short label as the full one when it is left blank', () => {
-		expect(parseChoreTypeLabels({ icon: ' 🧽 ', shortLabel: ' Éponge ', fullLabel: ' ' })).toEqual({
-			icon: '🧽',
-			shortLabel: 'Éponge',
-			fullLabel: 'Éponge'
-		});
+		expect(parseChoreTypeDetails({ icon: ' 🧽 ', shortLabel: ' Éponge ', fullLabel: ' ' })).toEqual(
+			{
+				icon: '🧽',
+				shortLabel: 'Éponge',
+				fullLabel: 'Éponge'
+			}
+		);
 	});
 
 	it.each([
@@ -76,6 +78,6 @@ describe('parseChoreTypeLabels', () => {
 			'Libellé complet trop long (60 caractères au plus)'
 		]
 	])('refuses %o: %s', (fields, message) => {
-		expect(parseChoreTypeLabels(fields)).toBe(message);
+		expect(parseChoreTypeDetails(fields)).toBe(message);
 	});
 });

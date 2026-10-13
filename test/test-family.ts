@@ -24,7 +24,7 @@ export const resetFamily = () =>
 /** Writes Papa the admin through saveWithVersion, as the app would. */
 export const seedAdmin = () => saveWithVersion(env.DB, 'users', ADMIN_ID, papaAdmin, ADMIN_ID);
 
-const otherMembers = [
+const otherUsers = [
 	[
 		PARENT_ID,
 		{ email: 'maman@exemple.fr', name: 'Maman', role: 'parent', colour_key: 'raspberry' }
@@ -36,6 +36,6 @@ const otherMembers = [
 /** Papa (admin), Maman (parent), Léa and Noé (children), as in prototype 02. */
 export const seedFamily = async () => {
 	await seedAdmin();
-	for (const [userId, member] of otherMembers)
-		await saveWithVersion(env.DB, 'users', userId, member, ADMIN_ID);
+	for (const [userId, user] of otherUsers)
+		await saveWithVersion(env.DB, 'users', userId, user, ADMIN_ID);
 };

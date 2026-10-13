@@ -3,9 +3,15 @@
 import type { ChoreTypeCatalogEntry, ChoreTypeOption, Viewer } from '../domain';
 import { isUuidV7, uuidV7 } from '../uuid';
 import { canManageChoreTypes } from './access-policy';
-import type { SettingsAnswer } from './user-settings';
 import { saveWithVersion } from './record-versions';
-import { parseChoreTypeLabels } from './settings-fields';
+import {
+	ADMINS_ONLY,
+	parseChoreTypeDetails,
+	refused,
+	SAVED,
+	type FormFields,
+	type SettingsAnswer
+} from './settings-fields';
 
 type ChoreTypeRow = {
 	id: string;
@@ -44,12 +50,7 @@ export const listChoreTypeCatalog = async (db: D1Database): Promise<ChoreTypeCat
 		isArchived: Boolean(row.archived_at)
 	}));
 
-const refused = (status: 400 | 403 | 404, message: string) => ({ status, message }) as const;
-const SAVED = { status: 200 } as const;
-const ADMINS_ONLY = refused(403, 'Réservé à l’admin');
 const NOT_FOUND = refused(404, 'Type de tâche introuvable');
-
-type FormFields = Record<string, unknown>;
 
 const findCatalogRow = async (db: D1Database, choreTypeId: unknown) =>
 	isUuidV7(choreTypeId)
@@ -63,8 +64,8 @@ export const addChoreType = async (
 	fields: FormFields
 ): Promise<SettingsAnswer> => {
 	if (!canManageChoreTypes(viewer)) return ADMINS_ONLY;
-	const labels = parseChoreTypeLabels(fields);
-	if (typeof labels === 'string') return refused(400, labels);
+	const choreTypeDetails = parseChoreTypeDetails(fields);
+	if (typeof choreTypeDetails === 'string') return refused(400, choreTypeDetails);
 	const rows = await listCatalogRows(db);
 	const choreTypeId = uuidV7();
 	await saveWithVersion(
@@ -74,9 +75,9 @@ export const addChoreType = async (
 		{
 			// The seed's keys are English slugs; the admin's types only need a unique one.
 			type_key: `custom_${choreTypeId}`,
-			short_label: labels.shortLabel,
-			full_label: labels.fullLabel,
-			icon: labels.icon,
+			short_label: choreTypeDetails.shortLabel,
+			full_label: choreTypeDetails.fullLabel,
+			icon: choreTypeDetails.icon,
 			sort_order: Math.max(0, ...rows.map((row) => row.sort_order)) + 1
 		},
 		viewer.id
@@ -93,13 +94,17 @@ export const updateChoreType = async (
 	if (!canManageChoreTypes(viewer)) return ADMINS_ONLY;
 	const row = await findCatalogRow(db, fields.id);
 	if (!row) return NOT_FOUND;
-	const labels = parseChoreTypeLabels(fields);
-	if (typeof labels === 'string') return refused(400, labels);
+	const choreTypeDetails = parseChoreTypeDetails(fields);
+	if (typeof choreTypeDetails === 'string') return refused(400, choreTypeDetails);
 	await saveWithVersion(
 		db,
 		'chore_types',
 		row.id,
-		{ short_label: labels.shortLabel, full_label: labels.fullLabel, icon: labels.icon },
+		{
+			short_label: choreTypeDetails.shortLabel,
+			full_label: choreTypeDetails.fullLabel,
+			icon: choreTypeDetails.icon
+		},
 		viewer.id
 	);
 	return SAVED;
@@ -113,6 +118,7 @@ export const moveChoreType = async (
 	direction: 'up' | 'down'
 ): Promise<SettingsAnswer> => {
 	if (!canManageChoreTypes(viewer)) return ADMINS_ONLY;
+	if (!isUuidV7(choreTypeId)) return NOT_FOUND;
 	const rows = await listCatalogRows(db);
 	const index = rows.findIndex((row) => row.id === choreTypeId);
 	if (index === -1) return NOT_FOUND;

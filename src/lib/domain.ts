@@ -74,6 +74,11 @@ export type ChoreFields = {
 /** A chore's note is one line (spec Q3), this long at most. */
 export const MAX_CHORE_NOTE_LENGTH = 200;
 
+/** Réglages' limits (spec Q10, Q2): the server refuses longer, the inputs' `maxlength` stops typing. */
+export const MAX_PERSON_NAME_LENGTH = 30;
+export const MAX_CHORE_TYPE_SHORT_LABEL_LENGTH = 20;
+export const MAX_CHORE_TYPE_FULL_LABEL_LENGTH = 60;
+
 /** One Historique row (spec Q6): the chore as the edit sheet takes it, plus what the row shows. */
 export type HistoryChore = ChoreFields & {
 	icon: string;

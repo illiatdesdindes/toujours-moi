@@ -1,12 +1,24 @@
 // Réglages' form fields (spec Q10): each parser returns the clean fields, or the French reason it
-// refuses them.
-import { COLOUR_KEYS, USER_ROLES, type ColourKey, type UserRole } from '../domain';
+// refuses them; and the answer every Réglages write gives its form action.
+import {
+	COLOUR_KEYS,
+	MAX_CHORE_TYPE_FULL_LABEL_LENGTH,
+	MAX_CHORE_TYPE_SHORT_LABEL_LENGTH,
+	MAX_PERSON_NAME_LENGTH,
+	USER_ROLES,
+	type ColourKey,
+	type UserRole
+} from '../domain';
 
-type FormFields = Record<string, unknown>;
+export type FormFields = Record<string, unknown>;
 
-const MAX_PERSON_NAME_LENGTH = 30;
-const MAX_SHORT_LABEL_LENGTH = 20;
-const MAX_FULL_LABEL_LENGTH = 60;
+/** Saved (with what the page shows after, if anything), or refused with the French reason. */
+export type SettingsAnswer<Saved extends object = object> =
+	({ status: 200 } & Saved) | { status: 400 | 403 | 404; message: string };
+
+export const refused = (status: 400 | 403 | 404, message: string) => ({ status, message }) as const;
+export const SAVED = { status: 200 } as const;
+export const ADMINS_ONLY = refused(403, 'Réservé à l’admin');
 
 const trimmed = (fieldValue: unknown) => (typeof fieldValue === 'string' ? fieldValue.trim() : '');
 const tooLong = (what: string, maxLength: number) =>
@@ -47,17 +59,17 @@ export const isSingleEmoji = (text: string) => {
 };
 
 /** Types de tâches: an emoji and the two labels; a blank full label is the short one. */
-export const parseChoreTypeLabels = (
+export const parseChoreTypeDetails = (
 	fields: FormFields
 ): { icon: string; shortLabel: string; fullLabel: string } | string => {
 	const icon = trimmed(fields.icon);
 	if (!isSingleEmoji(icon)) return 'Icône invalide : un seul emoji';
 	const shortLabel = trimmed(fields.shortLabel);
 	if (!shortLabel) return 'Libellé court manquant';
-	if (shortLabel.length > MAX_SHORT_LABEL_LENGTH)
-		return tooLong('Libellé court', MAX_SHORT_LABEL_LENGTH);
+	if (shortLabel.length > MAX_CHORE_TYPE_SHORT_LABEL_LENGTH)
+		return tooLong('Libellé court', MAX_CHORE_TYPE_SHORT_LABEL_LENGTH);
 	const fullLabel = trimmed(fields.fullLabel) || shortLabel;
-	if (fullLabel.length > MAX_FULL_LABEL_LENGTH)
-		return tooLong('Libellé complet', MAX_FULL_LABEL_LENGTH);
+	if (fullLabel.length > MAX_CHORE_TYPE_FULL_LABEL_LENGTH)
+		return tooLong('Libellé complet', MAX_CHORE_TYPE_FULL_LABEL_LENGTH);
 	return { icon, shortLabel, fullLabel };
 };

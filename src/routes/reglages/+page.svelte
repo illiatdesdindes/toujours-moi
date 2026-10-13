@@ -1,19 +1,16 @@
 <!-- Réglages (spec Q10, prototype 02): Mon profil for everyone, Enfants for parents, Membres and Types de tâches for the admin. Every form saves through a form action of this page. -->
 <script lang="ts">
 	import { getShowToast } from '#lib/app-context.js';
+	import ChoreTypeFields from '#lib/components/ChoreTypeFields.svelte';
 	import PersonColourDot from '#lib/components/PersonColourDot.svelte';
 	import PersonalColourPicker from '#lib/components/PersonalColourPicker.svelte';
-	import { USER_ROLES, type UserAccount, type UserRole } from '#lib/domain.js';
+	import PersonNameInput from '#lib/components/PersonNameInput.svelte';
+	import UserRoleSelect from '#lib/components/UserRoleSelect.svelte';
+	import { COLOUR_KEYS } from '#lib/domain.js';
 	import { enhance, type SubmitFunction } from '$app/forms';
 
 	let { data, form } = $props();
 	const showToast = getShowToast();
-
-	const ROLE_LABELS: Record<UserRole, string> = {
-		admin: 'admin',
-		parent: 'parent',
-		child: 'enfant'
-	};
 
 	/**
 	 * Saves, reloads the page's data, and says how it went in the toast. A button's
@@ -32,13 +29,12 @@
 			};
 		};
 
-	const activeAdminCount = $derived(
-		data.userAccounts?.filter((userAccount) => userAccount.isActive && userAccount.role === 'admin')
-			.length ?? 0
+	/** As prototype 02: the first palette colour nobody wears yet, so two people don't share one. */
+	const newUserColourKey = $derived(
+		COLOUR_KEYS.find(
+			(colourKey) => !data.userAccounts?.some((userAccount) => userAccount.colourKey === colourKey)
+		) ?? COLOUR_KEYS[0]
 	);
-	/** Spec Q10: the server refuses it too; the page only greys it out. */
-	const isLastActiveAdmin = (userAccount: UserAccount) =>
-		userAccount.isActive && userAccount.role === 'admin' && activeAdminCount === 1;
 </script>
 
 <div class="space-y-5">
@@ -52,12 +48,9 @@
 		>
 			<input type="hidden" name="id" value={data.viewer.id} />
 			<label class="block text-sm"
-				>Prénom<input
+				>Prénom<PersonNameInput
 					class="input w-full"
-					name="name"
 					value={data.viewer.name}
-					required
-					maxlength="30"
 					autocomplete="given-name"
 				/></label
 			>
@@ -80,14 +73,7 @@
 					use:enhance={saveWithToast(`${child.name} enregistré·e`)}
 				>
 					<input type="hidden" name="id" value={child.id} />
-					<input
-						class="input w-32 input-sm"
-						name="name"
-						value={child.name}
-						required
-						maxlength="30"
-						aria-label="Prénom"
-					/>
+					<PersonNameInput class="input w-32 input-sm" value={child.name} aria-label="Prénom" />
 					<PersonalColourPicker selectedColourKey={child.colourKey} size="sm" />
 					<button class="btn btn-sm">Enregistrer</button>
 				</form>
@@ -123,32 +109,22 @@
 					<input type="hidden" name="id" value={userAccount.id} />
 					<div class="flex flex-wrap items-center gap-2">
 						<PersonColourDot colourKey={userAccount.colourKey} />
-						<input
+						<PersonNameInput
 							class="input w-32 input-sm"
-							name="name"
 							value={userAccount.name}
-							required
-							maxlength="30"
 							aria-label="Prénom"
 						/>
-						{#if isLastActiveAdmin(userAccount)}
+						{#if userAccount.isLastActiveAdmin}
 							<input type="hidden" name="role" value={userAccount.role} />
 						{/if}
-						<select
+						<UserRoleSelect
 							class="select w-28 select-sm"
-							name="role"
-							aria-label="Rôle"
-							disabled={isLastActiveAdmin(userAccount)}
-							title={isLastActiveAdmin(userAccount)
+							selectedRole={userAccount.role}
+							disabled={userAccount.isLastActiveAdmin}
+							title={userAccount.isLastActiveAdmin
 								? 'Il faut toujours au moins un admin actif'
 								: undefined}
-						>
-							{#each USER_ROLES as role (role)}
-								<option value={role} selected={role === userAccount.role}
-									>{ROLE_LABELS[role]}</option
-								>
-							{/each}
-						</select>
+						/>
 						{#if !userAccount.isActive}<span class="badge badge-sm">désactivé·e</span>{/if}
 					</div>
 					<p class="truncate opacity-70">{userAccount.email}</p>
@@ -162,8 +138,8 @@
 							data-success-message={userAccount.isActive
 								? `${userAccount.name} désactivé·e`
 								: `${userAccount.name} réactivé·e`}
-							disabled={isLastActiveAdmin(userAccount)}
-							title={isLastActiveAdmin(userAccount)
+							disabled={userAccount.isLastActiveAdmin}
+							title={userAccount.isLastActiveAdmin
 								? 'Il faut toujours au moins un admin actif'
 								: undefined}>{userAccount.isActive ? 'Désactiver' : 'Réactiver'}</button
 						>
@@ -188,22 +164,15 @@
 						aria-label="Email"
 						autocomplete="off"
 					/>
-					<input
+					<PersonNameInput
 						class="input w-full input-sm"
-						name="name"
-						required
-						maxlength="30"
 						placeholder="prénom"
 						aria-label="Prénom"
 						autocomplete="off"
 					/>
-					<select class="select w-full select-sm" name="role" aria-label="Rôle">
-						<option value="parent">parent</option>
-						<option value="child" selected>enfant</option>
-						<option value="admin">admin</option>
-					</select>
+					<UserRoleSelect class="select w-full select-sm" selectedRole="child" />
 				</div>
-				<PersonalColourPicker selectedColourKey="sage" size="sm" />
+				<PersonalColourPicker selectedColourKey={newUserColourKey} size="sm" />
 				<button class="btn btn-primary btn-sm">Ajouter</button>
 			</form>
 			{#if form && 'addedUserEmail' in form}
@@ -222,6 +191,7 @@
 			<h2 id="chore-types" class="font-bold">Types de tâches</h2>
 			{#each data.choreTypeCatalog as choreType, index (choreType.id)}
 				{@const choreTypeActionsFormId = `chore-type-actions-${choreType.id}`}
+				{@const isLastChoreType = index === data.choreTypeCatalog.length - 1}
 				<!-- ↑ ↓ Archiver post this form, so Entrée in the fields below stays Enregistrer. -->
 				<form
 					id={choreTypeActionsFormId}
@@ -241,57 +211,36 @@
 					use:enhance={saveWithToast(`${choreType.shortLabel} enregistré`)}
 				>
 					<input type="hidden" name="id" value={choreType.id} />
-					<div class="flex items-center gap-2">
-						<input
-							class="input w-14 text-center text-lg input-sm"
-							name="icon"
-							value={choreType.icon}
-							required
-							aria-label="Icône (un emoji)"
-						/>
-						<input
-							class="input min-w-0 flex-1 input-sm"
-							name="shortLabel"
-							value={choreType.shortLabel}
-							required
-							maxlength="20"
-							aria-label="Libellé court"
-						/>
-						<button
-							class="btn btn-square btn-sm"
-							form={choreTypeActionsFormId}
-							formaction="?/moveChoreTypeUp"
-							disabled={index === 0}
-							aria-label="Monter {choreType.shortLabel}">↑</button
-						>
-						<button
-							class="btn btn-square btn-sm"
-							form={choreTypeActionsFormId}
-							formaction="?/moveChoreTypeDown"
-							disabled={index === data.choreTypeCatalog.length - 1}
-							aria-label="Descendre {choreType.shortLabel}">↓</button
-						>
-					</div>
-					<div class="flex items-center gap-2">
-						<input
-							class="input min-w-0 flex-1 input-sm"
-							name="fullLabel"
-							value={choreType.fullLabel}
-							maxlength="60"
-							placeholder="libellé complet"
-							aria-label="Libellé complet"
-						/>
-						<button class="btn btn-sm">Enregistrer</button>
-						<button
-							class="btn w-24 btn-sm"
-							form={choreTypeActionsFormId}
-							formaction={choreType.isArchived ? '?/restoreChoreType' : '?/archiveChoreType'}
-							data-success-message={choreType.isArchived
-								? `${choreType.shortLabel} restauré`
-								: `${choreType.shortLabel} archivé`}
-							>{choreType.isArchived ? 'Restaurer' : 'Archiver'}</button
-						>
-					</div>
+					<ChoreTypeFields {choreType}>
+						{#snippet afterShortLabel()}
+							<button
+								class="btn btn-square btn-sm"
+								form={choreTypeActionsFormId}
+								formaction="?/moveChoreTypeUp"
+								disabled={index === 0}
+								aria-label="Monter {choreType.shortLabel}">↑</button
+							>
+							<button
+								class="btn btn-square btn-sm"
+								form={choreTypeActionsFormId}
+								formaction="?/moveChoreTypeDown"
+								disabled={isLastChoreType}
+								aria-label="Descendre {choreType.shortLabel}">↓</button
+							>
+						{/snippet}
+						{#snippet afterFullLabel()}
+							<button class="btn btn-sm">Enregistrer</button>
+							<button
+								class="btn w-24 btn-sm"
+								form={choreTypeActionsFormId}
+								formaction={choreType.isArchived ? '?/restoreChoreType' : '?/archiveChoreType'}
+								data-success-message={choreType.isArchived
+									? `${choreType.shortLabel} restauré`
+									: `${choreType.shortLabel} archivé`}
+								>{choreType.isArchived ? 'Restaurer' : 'Archiver'}</button
+							>
+						{/snippet}
+					</ChoreTypeFields>
 				</form>
 			{/each}
 
@@ -302,33 +251,11 @@
 				use:enhance={saveWithToast('Type ajouté', { reset: true })}
 			>
 				<h3 class="font-semibold">Ajouter un type</h3>
-				<div class="flex items-center gap-2">
-					<input
-						class="input w-14 text-center text-lg input-sm"
-						name="icon"
-						required
-						placeholder="🧽"
-						aria-label="Icône (un emoji)"
-					/>
-					<input
-						class="input min-w-0 flex-1 input-sm"
-						name="shortLabel"
-						required
-						maxlength="20"
-						placeholder="libellé court"
-						aria-label="Libellé court"
-					/>
-				</div>
-				<div class="flex items-center gap-2">
-					<input
-						class="input min-w-0 flex-1 input-sm"
-						name="fullLabel"
-						maxlength="60"
-						placeholder="libellé complet (facultatif)"
-						aria-label="Libellé complet"
-					/>
-					<button class="btn btn-primary btn-sm">Ajouter</button>
-				</div>
+				<ChoreTypeFields>
+					{#snippet afterFullLabel()}
+						<button class="btn btn-primary btn-sm">Ajouter</button>
+					{/snippet}
+				</ChoreTypeFields>
 			</form>
 		</section>
 	{/if}

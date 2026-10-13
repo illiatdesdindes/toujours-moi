@@ -33,26 +33,27 @@ export const canSeeChoreUpdateCount = (viewer: PersonRef) => viewer.role === 'ad
 // ponytail: the same people as canViewProfile today; give it its own body when the two rules part.
 export const canEditPersonDetails = canViewProfile;
 
-export const canManageMembers = (viewer: PersonRef) => viewer.role === 'admin';
+export const canManageUsers = (viewer: PersonRef) => viewer.role === 'admin';
 export const canManageChoreTypes = (viewer: PersonRef) => viewer.role === 'admin';
+
+/** Réglages' Enfants card, as prototype 02: parents only; the admin edits children in Membres. */
+export const canSeeChildrenSettings = (viewer: PersonRef) => viewer.role === 'parent';
 
 /** Spec Q8: the Famille profile, for parents and admin. */
 export const canViewFamilyProfile = (viewer: PersonRef) => isGrownUp(viewer);
 
 /** Spec Q10: a role change or deactivation must leave at least one active admin. */
 export const keepsAnActiveAdmin = ({
-	member,
+	user,
 	activeAdminCount,
 	change
 }: {
-	member: PersonRef & { isActive: boolean };
+	user: PersonRef & { isActive: boolean };
 	activeAdminCount: number;
 	change: 'deactivate' | { role: UserRole };
 }) => {
 	// A deactivated admin isn't counted, so changing them can't lose an active admin.
 	const losesAdmin =
-		member.isActive &&
-		member.role === 'admin' &&
-		(change === 'deactivate' || change.role !== 'admin');
+		user.isActive && user.role === 'admin' && (change === 'deactivate' || change.role !== 'admin');
 	return !losesAdmin || activeAdminCount > 1;
 };

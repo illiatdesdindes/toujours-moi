@@ -146,7 +146,7 @@ describe('Réglages', () => {
 	});
 
 	describe('Membres', () => {
-		it('adds a member who can then get in, and reminds the admin of the Access policy', async () => {
+		it('adds a user who can then get in, and reminds the admin of the Access policy', async () => {
 			const answer = await act(PAPA, 'addUser', {
 				email: ' Mamie@Exemple.fr ',
 				name: 'Mamie',

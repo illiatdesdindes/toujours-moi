@@ -5,7 +5,8 @@ import {
 	canEditPersonDetails,
 	canLogFor,
 	canManageChoreTypes,
-	canManageMembers,
+	canManageUsers,
+	canSeeChildrenSettings,
 	canViewFamilyProfile,
 	canViewProfile,
 	keepsAnActiveAdmin
@@ -82,9 +83,17 @@ describe('access policy', () => {
 		[admin, true],
 		[parent, false],
 		[child, false]
-	])('lets %o manage members and chore types: %s', (viewer, expected) => {
-		expect(canManageMembers(viewer)).toBe(expected);
+	])('lets %o manage users and chore types: %s', (viewer, expected) => {
+		expect(canManageUsers(viewer)).toBe(expected);
 		expect(canManageChoreTypes(viewer)).toBe(expected);
+	});
+
+	it.each([
+		[admin, false],
+		[parent, true],
+		[child, false]
+	])('shows %o the Enfants card of Réglages: %s', (viewer, expected) => {
+		expect(canSeeChildrenSettings(viewer)).toBe(expected);
 	});
 
 	it.each([
@@ -99,10 +108,10 @@ describe('access policy', () => {
 	it('refuses to demote or deactivate the last active admin', () => {
 		const activeAdmin = { ...admin, isActive: true };
 		const keeps = (
-			member: PersonRef & { isActive: boolean },
+			user: PersonRef & { isActive: boolean },
 			activeAdminCount: number,
 			change: 'deactivate' | { role: 'admin' | 'parent' }
-		) => keepsAnActiveAdmin({ member, activeAdminCount, change });
+		) => keepsAnActiveAdmin({ user, activeAdminCount, change });
 		expect(keeps(activeAdmin, 1, 'deactivate')).toBe(false);
 		expect(keeps(activeAdmin, 1, { role: 'parent' })).toBe(false);
 		expect(keeps(activeAdmin, 1, { role: 'admin' })).toBe(true);

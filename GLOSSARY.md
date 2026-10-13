@@ -13,7 +13,7 @@ brackets when there is one.
 - **Personal colour** [couleur]: one of the 8 palette colours a user wears (`colour_key`, picked
   with `PersonalColourPicker.svelte`); it tints the app when their view is on screen.
 - **Role**: `admin`, `parent` or `child` [admin, parent, enfant]. Spec Q8.
-- **Admin**: the role that manages members and chore types. There is always at least one **active
+- **Admin**: the role that manages users and chore types. There is always at least one **active
   admin** (spec Q10); a deactivated admin doesn't count.
 - **Bootstrap admin**: while `users` is empty, the first email Cloudflare Access verifies becomes
   the admin (spec Q1).

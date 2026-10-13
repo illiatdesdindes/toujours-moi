@@ -1,6 +1,11 @@
 import { env } from 'cloudflare:workers';
 import { fail } from '@sveltejs/kit';
-import { canManageChoreTypes, canManageMembers } from '#lib/server/access-policy.js';
+import {
+	canManageChoreTypes,
+	canManageUsers,
+	canSeeChildrenSettings,
+	keepsAnActiveAdmin
+} from '#lib/server/access-policy.js';
 import {
 	addChoreType,
 	listChoreTypeCatalog,
@@ -8,12 +13,12 @@ import {
 	setChoreTypeArchived,
 	updateChoreType
 } from '#lib/server/chore-types.js';
+import type { SettingsAnswer } from '#lib/server/settings-fields.js';
 import {
 	addUser,
 	setUserActive,
 	updateUserAsAdmin,
-	updatePersonDetails,
-	type SettingsAnswer
+	updatePersonDetails
 } from '#lib/server/user-settings.js';
 import { listAllUsers } from '#lib/server/users.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -21,12 +26,24 @@ import type { Actions, PageServerLoad } from './$types';
 // Spec Q10: Mon profil for everyone, Enfants for parents, Membres and Types de tâches for the admin.
 export const load: PageServerLoad = async ({ locals: { viewer } }) => {
 	const userAccounts = await listAllUsers(env.DB);
+	const activeAdminCount = userAccounts.filter(
+		(userAccount) => userAccount.isActive && userAccount.role === 'admin'
+	).length;
 	return {
-		children:
-			viewer.role === 'parent'
-				? userAccounts.filter((userAccount) => userAccount.isActive && userAccount.role === 'child')
-				: null,
-		userAccounts: canManageMembers(viewer) ? userAccounts : null,
+		children: canSeeChildrenSettings(viewer)
+			? userAccounts.filter((userAccount) => userAccount.isActive && userAccount.role === 'child')
+			: null,
+		userAccounts: canManageUsers(viewer)
+			? userAccounts.map((userAccount) => ({
+					...userAccount,
+					// The page greys out the role and Désactiver; the actions refuse them anyway.
+					isLastActiveAdmin: !keepsAnActiveAdmin({
+						user: userAccount,
+						activeAdminCount,
+						change: 'deactivate'
+					})
+				}))
+			: null,
 		choreTypeCatalog: canManageChoreTypes(viewer) ? await listChoreTypeCatalog(env.DB) : null
 	};
 };
@@ -39,12 +56,9 @@ export const actions: Actions = {
 	updatePersonDetails: async ({ locals, request }) =>
 		answerAction(await updatePersonDetails(env.DB, locals.viewer, await formFields(request))),
 	addUser: async ({ locals, request }) => {
-		const fields = await formFields(request);
-		const answer = await addUser(env.DB, locals.viewer, fields);
+		const answer = await addUser(env.DB, locals.viewer, await formFields(request));
 		// The page reminds the admin to add the same email to the Access policy (spec Q1).
-		return answer.status === 200
-			? { addedUserEmail: String(fields.email).trim().toLowerCase() }
-			: answerAction(answer);
+		return answer.status === 200 ? { addedUserEmail: answer.addedUserEmail } : answerAction(answer);
 	},
 	updateUserAsAdmin: async ({ locals, request }) =>
 		answerAction(await updateUserAsAdmin(env.DB, locals.viewer, await formFields(request))),
