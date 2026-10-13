@@ -1,10 +1,10 @@
 <!-- The edit sheet (spec Q4, Q6): a bottom sheet on mobile, a centred modal on desktop, saved with an explicit "Enregistrer". The home's Modifier opens it on the pending chore; #7 adds editing a saved one. -->
 <script lang="ts">
-	import { endsInTheFuture } from '#lib/chore-timing.js';
-	import type { NewChore } from '#lib/chore-outbox.js';
-	import { MAX_CHORE_NOTE_LENGTH, type ChoreTypeOption } from '#lib/domain.js';
+	import { endsInTheFuture, NO_FUTURE_CHORE_MESSAGE } from '#lib/chore-timing.js';
+	import type { ChoreTypeOption, NewChore } from '#lib/domain.js';
 	import { fromParisDateAndTime, toParisDateAndTime } from '#lib/paris-time.js';
 	import ChoreTypePicker from './ChoreTypePicker.svelte';
+	import ChoreWhenAndNoteFields from './ChoreWhenAndNoteFields.svelte';
 	import DurationStepper from './DurationStepper.svelte';
 	import Icon from './Icon.svelte';
 
@@ -41,7 +41,7 @@
 						draft.durationMinutes,
 						new Date()
 				  )
-				? 'Pas de tâche dans le futur'
+				? NO_FUTURE_CHORE_MESSAGE
 				: null
 	);
 
@@ -92,34 +92,13 @@
 				selectedChoreTypeId={draft.choreTypeId}
 				onPick={(choreType) => (draft.choreTypeId = choreType.id)}
 			/>
-			<div class="grid grid-cols-2 gap-2 text-sm">
-				<label
-					>Date<input
-						type="date"
-						class="input w-full input-sm"
-						bind:value={draft.date}
-						max={today}
-						required
-					/></label
-				>
-				<label
-					>Début<input
-						type="time"
-						step="900"
-						class="input w-full input-sm"
-						bind:value={draft.time}
-						required
-					/></label
-				>
-			</div>
-			<label class="block text-sm"
-				>Note<input
-					class="input w-full input-sm"
-					bind:value={draft.note}
-					maxlength={MAX_CHORE_NOTE_LENGTH}
-					placeholder="facultatif"
-				/></label
-			>
+			<ChoreWhenAndNoteFields
+				bind:date={draft.date}
+				bind:time={draft.time}
+				bind:note={draft.note}
+				latestDate={today}
+				required
+			/>
 			{#if draftError}<p class="text-sm font-semibold text-error" role="alert">{draftError}</p>{/if}
 			<button class="btn w-full btn-primary" disabled={!!draftError}>Enregistrer</button>
 		</form>

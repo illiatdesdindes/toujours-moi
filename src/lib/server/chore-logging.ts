@@ -1,8 +1,7 @@
 // Creating a chore (spec Q3, Q20 point 1): POST /api/chores, sent by the pending card and the
 // outbox. Idempotent by the browser-made id: a retry of the same chore answers 200 and writes nothing.
-import { endsInTheFuture, isValidDurationMinutes } from '../chore-timing';
-import type { NewChore } from '../chore-outbox';
-import { MAX_CHORE_NOTE_LENGTH, type UserRole, type Viewer } from '../domain';
+import { endsInTheFuture, isValidDurationMinutes, NO_FUTURE_CHORE_MESSAGE } from '../chore-timing';
+import { MAX_CHORE_NOTE_LENGTH, type NewChore, type UserRole, type Viewer } from '../domain';
 import { isUuidV7 } from '../uuid';
 import { canLogFor } from './access-policy';
 import { saveWithVersion } from './record-versions';
@@ -11,11 +10,11 @@ import { saveWithVersion } from './record-versions';
 const CLOCK_SKEW_ALLOWANCE_MS = 2 * 60_000;
 
 type ChoreLoggingAnswer = {
-	status: 200 | 201 | 400 | 403 | 409;
+	status: 200 | 201 | 400 | 409 | 422;
 	body: { id: string } | { message: string };
 };
 
-const refused = (status: 400 | 403 | 409, message: string): ChoreLoggingAnswer => ({
+const refused = (status: 400 | 409 | 422, message: string): ChoreLoggingAnswer => ({
 	status,
 	body: { message }
 });
@@ -30,8 +29,8 @@ export const logChore = async (
 	if (typeof chore === 'string') return refused(400, chore);
 
 	// A retry: the chore is already there (spec Q20 point 1: same author, or it isn't theirs).
-	const existing = await findChoreAuthor(db, chore.id);
-	if (existing) return answerRetry(existing, chore.id, viewer);
+	const existingChoreAuthor = await findChoreAuthor(db, chore.id);
+	if (existingChoreAuthor) return answerRetry(existingChoreAuthor, chore.id, viewer);
 
 	const startedAt = new Date(chore.startedAt);
 	if (
@@ -41,9 +40,10 @@ export const logChore = async (
 			new Date(now.getTime() + CLOCK_SKEW_ALLOWANCE_MS)
 		)
 	)
-		return refused(400, 'Pas de tâche dans le futur');
+		return refused(400, NO_FUTURE_CHORE_MESSAGE);
 	const [choreType, performer] = await Promise.all([
 		db
+			// Archived types still take chores: one queued in the outbox before the archiving must go through.
 			.prepare('SELECT 1 FROM chore_types WHERE id = ? AND deleted_at IS NULL')
 			.bind(chore.choreTypeId)
 			.first(),
@@ -54,8 +54,9 @@ export const logChore = async (
 	]);
 	if (!choreType) return refused(400, 'Type de tâche inconnu');
 	if (!performer) return refused(400, 'Personne inconnue');
+	// 422, not 403: the outbox drops it and says so, while a 403 (Access JWT check) is retried.
 	if (!canLogFor(viewer, performer))
-		return refused(403, 'Tu ne peux pas noter une tâche pour cette personne');
+		return refused(422, 'Tu ne peux pas noter une tâche pour cette personne');
 
 	const saved = await saveWithVersion(
 		db,
@@ -83,18 +84,25 @@ const findChoreAuthor = (db: D1Database, choreId: string) =>
 		.bind(choreId)
 		.first<{ author_user_id: string }>();
 
-const answerRetry = (existing: { author_user_id: string }, choreId: string, viewer: Viewer) =>
-	existing.author_user_id === viewer.id
+const answerRetry = (
+	existingChoreAuthor: { author_user_id: string },
+	choreId: string,
+	viewer: Viewer
+) =>
+	existingChoreAuthor.author_user_id === viewer.id
 		? ({ status: 200, body: { id: choreId } } as const)
 		: refused(409, 'Cette tâche existe déjà');
 
+/** The duration of the user's last logged chore, null before the first one. */
+export const readLastDurationMinutes = (db: D1Database, userId: string) =>
+	db
+		.prepare('SELECT last_duration_minutes FROM users WHERE id = ?')
+		.bind(userId)
+		.first<number | null>('last_duration_minutes');
+
 /** The home's next default duration (spec Q4). Only written when it changes: one version per change. */
 const rememberLastDuration = async (db: D1Database, viewerId: string, durationMinutes: number) => {
-	const viewerRow = await db
-		.prepare('SELECT last_duration_minutes FROM users WHERE id = ?')
-		.bind(viewerId)
-		.first<{ last_duration_minutes: number | null }>();
-	if (viewerRow?.last_duration_minutes !== durationMinutes)
+	if ((await readLastDurationMinutes(db, viewerId)) !== durationMinutes)
 		await saveWithVersion(
 			db,
 			'users',

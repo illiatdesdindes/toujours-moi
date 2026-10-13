@@ -17,7 +17,7 @@ export const createPendingChore = <Chore>({
 	let pending: { chore: Chore; timer: ReturnType<typeof setTimeout> } | null = null;
 
 	/** Stops the countdown and returns the chore it held. */
-	const take = () => {
+	const takePendingChore = () => {
 		if (!pending) return null;
 		clearTimeout(pending.timer);
 		const { chore } = pending;
@@ -26,7 +26,7 @@ export const createPendingChore = <Chore>({
 		return chore;
 	};
 	const flush = () => {
-		const chore = take();
+		const chore = takePendingChore();
 		if (chore) commit(chore);
 	};
 
@@ -41,9 +41,9 @@ export const createPendingChore = <Chore>({
 			onChange(chore);
 		},
 		cancel() {
-			take();
+			takePendingChore();
 		},
-		takeForEdit: take,
+		takeForEdit: takePendingChore,
 		flush
 	};
 };

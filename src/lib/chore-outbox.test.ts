@@ -3,9 +3,9 @@ import {
 	CHORE_OUTBOX_STORAGE_KEY,
 	createChoreOutbox,
 	sendChoreToServer,
-	type NewChore,
 	type SendOutcome
 } from './chore-outbox';
+import type { NewChore } from './domain';
 
 const chore = (id: string): NewChore => ({
 	id,

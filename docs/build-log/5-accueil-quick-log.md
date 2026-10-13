@@ -16,7 +16,7 @@
 ## Decisions
 
 - **The outbox is write-ahead**: every committed chore is stored in `localStorage` first, then sent, and removed once the server has it. The spec puts a chore in the outbox when its send fails; storing it before sending is a superset that also covers a page killed mid-request (the `pagehide` flush). Sending twice is harmless since the POST is idempotent.
-- **What the outbox drops vs retries**: 400 / 404 / 409 / 422 are final (dropped, toast "Tâche non enregistrée : <message>"). Everything else is retried: 429, 5xx, network failures, and **403**, because `hooks.server.ts` also answers 403 when the Access JWT doesn't verify (e.g. the certs fetch failed), and losing a chore is worse than retrying one forever. A 2xx counts only if it echoes `{ id }` of the chore, so Access's login page (after the session ends) isn't taken for a save.
+- **What the outbox drops vs retries**: 400 / 404 / 409 / 422 are final (dropped, toast "Tâche non enregistrée : <message>"). The access policy's refusal (`canLogFor`) answers **422**, so it is dropped and shown. Everything else is retried: 429, 5xx, network failures, and **403**, because `hooks.server.ts` also answers 403 when the Access JWT doesn't verify (e.g. the certs fetch failed), and losing a chore is worse than retrying one forever. A 2xx counts only if it echoes `{ id }` of the chore, so Access's login page (after the session ends) isn't taken for a save.
 - **Outbox entries carry the viewer id** and a viewer only sends their own, so on a shared browser a chore never goes out under another author.
 - **Passes never overlap** (a promise chain), and a pass stops at the first chore that can't go yet (offline), oldest first.
 - **`localStorageOrMemory()`**: when `localStorage` throws (private window, blocked site data) the outbox falls back to memory for the page's life.
@@ -33,7 +33,7 @@
 - **`ChoreTypePicker`** is one component with two behaviours: no `selectedChoreTypeId` → tap logs (home, pop tiles); with it → a radio group (sheet, the prototype's selected style). Plain buttons, not `.btn`, so wrapped labels ("Salle de bain") keep their height.
 - **Seeded chore types have fixed UUID v7 ids** (`01900000-0000-7000-a000-0000000000NN`) and **no version 0**: `record_versions.changed_by_user_id` must reference a user and there is none at migration time. #9's edits write versions from then on.
 - **Seed rows as one `INSERT … VALUES`**: D1 refuses a 16-term `UNION ALL` ("too many terms in compound SELECT").
-- **Start time rounded down** to the quarter hour: see Deviations.
+- **Start time rounded down** to the quarter hour, not to the nearest as Q4 first said: rounding up always makes the chore end after the tap, which Q3's no-future rule refuses (14:08 − 15 min = 13:53 → 14:00, ending 14:15). So `deriveStartedAt` floors to the quarter (13:45); the user can still edit date and time. `docs/spec.md` Q4 now says "rounded down".
 - **The details line's performer is always "Moi"** until #6.
 - **`pop-edge` utility** added to `layout.css` (prototype's `.pop-edge`), as #3's log planned for the first card or tile. Icons `minus`, `plus`, `x-mark`, `chevron-right` added to `Icon.svelte`; `Icon` now takes a Svelte `ClassValue`.
 - **The details line is a native `<details>`**, bound to state so it closes after each commit (prototype's `resetHomeOverride`).
@@ -41,10 +41,24 @@
 - **Test helpers**: `resetUsers` renamed `resetFamily` (it also empties `chores`, which reference users); `seedFamily` (the 4 users) moved to `test/test-family.ts`; `postJson` added to `test/worker-requests.ts`.
 - **Browser pass tooling**: `agent-browser click` took ~5 s while the pending bar animated, so cancelling through it landed after the commit. Clicks were driven with `agent-browser eval` (DOM `click()`) instead; the app's own cancel works. A tab left in the background reported `visibilityState: hidden`, which delays a dialog's `close` event; the pass was redone in a fresh, visible tab.
 
+### Code-review findings applied
+
+- **`ChoreWhenAndNoteFields.svelte`**: the date / début / note fields, shared by the home's details line and the edit sheet (`required` in the sheet, empty allowed on the home). The sheet's note now sits in the same 2-column grid, full width, as on the home.
+- **Policy refusal is 422, not 403** (`canLogFor` in `chore-logging.ts`): the outbox already drops 422 and shows the message, while 403 stays retried for the Access JWT case. This also settles the #6 "Fait par" worry: a refused chore no longer sits in the outbox.
+- **`NewChore` moved to `domain.ts`**: it is the API contract, used by the server; the server no longer imports the browser outbox module.
+- **`readLastDurationMinutes`** in `chore-logging.ts`, used by the home's load and by `rememberLastDuration`, instead of two inline queries.
+- **`DurationStepper`** uses `MIN_DURATION_MINUTES` / `MAX_DURATION_MINUTES` and a named `STEP_MINUTES`.
+- **`NO_FUTURE_CHORE_MESSAGE`** in `chore-timing.ts`, the one copy of "Pas de tâche dans le futur" for the server, the sheet and the home's toast (which adds ": change la date ou le début.").
+- **Renames**: `details` → `quickLogOverrides` (home), `remove` → `removeOutboxEntry`, `take` → `takePendingChore`, `existing` → `existingChoreAuthor`.
+- **Sheet save toast** is the prototype's "✓ Enregistré"; the quick log's commit keeps "✓ Vaisselle · 45 min enregistré".
+- **Archived types still take new chores** (the deleted check stays, the archived one is left out on purpose): a chore queued in the outbox before an admin archives its type must still go through, and the picker already hides archived types. Commented in `chore-logging.ts`, covered by a new integration test.
+- Browser pass after the changes (390 px and 1280 px, as Papa): details line fields, sheet fields (date/time required), "✓ Enregistré" after a sheet save.
+
 ## Deviations from spec
 
-- **Quick-log start time rounded down, not to the nearest quarter (Q4).** Q4 says "moment of the tap − duration, rounded to the nearest quarter hour", but rounding up always makes the chore end after the tap, which Q3's no-future rule refuses (14:08 − 15 min = 13:53 → 14:00, ending 14:15). So `deriveStartedAt` floors to the quarter (13:45). The user can still edit date and time.
+- None (the Q4 rounding is now in the spec, see Decisions).
 
 ## Skipped review/QA findings
 
-- None yet.
+- **Rename `app-context.ts`**: skipped. It holds what the root layout hands every page (the chore outbox and the toast), so its name says where the values come from, which is how a reader looks for it. Splitting it into two one-line files, or naming it after one of its two contents, would read worse. The glossary's "chore outbox" is the outbox's own module, `chore-outbox.ts`.
+- **2-minute clock-skew allowance on the server's no-future check**: kept. Q3's rule is about the user's now; the server's clock and a phone's are never exactly equal, and without the allowance a just-finished chore from a phone running slightly ahead would be refused and dropped from the outbox, which loses data. The client checks strictly, so a user can't enter a future chore. Already recorded under Decisions.

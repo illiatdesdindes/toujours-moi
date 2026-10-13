@@ -3,7 +3,9 @@
 	import {
 		clampDurationMinutes,
 		DURATION_CHIPS_MINUTES,
-		formatDuration
+		formatDuration,
+		MAX_DURATION_MINUTES,
+		MIN_DURATION_MINUTES
 	} from '#lib/chore-timing.js';
 	import Icon from './Icon.svelte';
 
@@ -16,6 +18,7 @@
 		compact?: boolean;
 	} = $props();
 
+	const STEP_MINUTES = 15;
 	const step = (minutes: number) =>
 		(durationMinutes = clampDurationMinutes(durationMinutes + minutes));
 </script>
@@ -25,8 +28,8 @@
 		type="button"
 		class={['btn btn-circle', !compact && 'btn-lg']}
 		aria-label="Moins 15 minutes"
-		disabled={durationMinutes <= 15}
-		onclick={() => step(-15)}><Icon glyph="minus" class="size-6" /></button
+		disabled={durationMinutes <= MIN_DURATION_MINUTES}
+		onclick={() => step(-STEP_MINUTES)}><Icon glyph="minus" class="size-6" /></button
 	>
 	<output class={['font-bold tabular-nums', compact ? 'text-3xl' : 'text-4xl']} aria-live="polite"
 		>{formatDuration(durationMinutes)}</output
@@ -35,8 +38,8 @@
 		type="button"
 		class={['btn btn-circle', !compact && 'btn-lg']}
 		aria-label="Plus 15 minutes"
-		disabled={durationMinutes >= 1440}
-		onclick={() => step(15)}><Icon glyph="plus" class="size-6" /></button
+		disabled={durationMinutes >= MAX_DURATION_MINUTES}
+		onclick={() => step(STEP_MINUTES)}><Icon glyph="plus" class="size-6" /></button
 	>
 </div>
 {#if !compact}

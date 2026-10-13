@@ -116,10 +116,23 @@ describe('POST /api/chores', () => {
 		const forLea = newChore({ performerUserId: CHILD_ID });
 		expect((await logChore(forLea, 'maman@exemple.fr')).status).toBe(201);
 		const leaForMaman = newChore({ performerUserId: PARENT_ID });
-		expect((await logChore(leaForMaman, 'lea@exemple.fr')).status).toBe(403);
+		expect((await logChore(leaForMaman, 'lea@exemple.fr')).status).toBe(422);
 		expect(await choreRows()).toEqual([
 			expect.objectContaining({ performer_user_id: CHILD_ID, author_user_id: PARENT_ID })
 		]);
+	});
+
+	it('still takes a chore of an archived type (one queued in the outbox before the archiving)', async () => {
+		await env.DB.prepare("UPDATE chore_types SET archived_at = '2026-10-01T00:00:00Z' WHERE id = ?")
+			.bind(DISHES_ID)
+			.run();
+		try {
+			expect((await logChore(newChore())).status).toBe(201);
+		} finally {
+			await env.DB.prepare('UPDATE chore_types SET archived_at = NULL WHERE id = ?')
+				.bind(DISHES_ID)
+				.run();
+		}
 	});
 
 	it("makes the chore's duration the viewer's next default on the home", async () => {

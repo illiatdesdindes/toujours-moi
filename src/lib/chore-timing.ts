@@ -38,6 +38,9 @@ export const deriveStartedAt = (tappedAt: Date, durationMinutes: number) =>
 		Math.floor((tappedAt.getTime() - durationMinutes * MINUTE_MS) / QUARTER_MS) * QUARTER_MS
 	);
 
+/** Spec Q3's refusal, as the server, the edit sheet and the home say it. */
+export const NO_FUTURE_CHORE_MESSAGE = 'Pas de tâche dans le futur';
+
 /** Spec Q3: `started_at + duration` can't be after now. */
 export const endsInTheFuture = (startedAt: Date, durationMinutes: number, now: Date) =>
 	startedAt.getTime() + durationMinutes * MINUTE_MS > now.getTime();

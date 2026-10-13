@@ -3,16 +3,7 @@
 // server has it. Retried on `online`, on reopening the app and on the next quick log; the server's
 // POST /api/chores is idempotent by the browser-made id, so sending twice is harmless.
 
-/** The body of POST /api/chores. */
-export type NewChore = {
-	id: string;
-	choreTypeId: string;
-	durationMinutes: number;
-	/** ISO UTC. */
-	startedAt: string;
-	note: string | null;
-	performerUserId: string;
-};
+import type { NewChore } from './domain';
 
 export type SendOutcome = 'saved' | 'retry' | { rejected: string };
 
@@ -44,7 +35,7 @@ export const createChoreOutbox = ({
 	};
 	const writeEntries = (entries: OutboxEntry[]) =>
 		storage.setItem(CHORE_OUTBOX_STORAGE_KEY, JSON.stringify(entries));
-	const remove = (choreId: string) =>
+	const removeOutboxEntry = (choreId: string) =>
 		writeEntries(readEntries().filter((entry) => entry.chore.id !== choreId));
 	const unsentChores = () =>
 		readEntries()
@@ -56,7 +47,7 @@ export const createChoreOutbox = ({
 		for (const chore of unsentChores()) {
 			const outcome = await send(chore);
 			if (outcome === 'retry') return;
-			remove(chore.id);
+			removeOutboxEntry(chore.id);
 			if (outcome !== 'saved') onRejected(chore, outcome.rejected);
 		}
 	};
@@ -75,8 +66,9 @@ export const createChoreOutbox = ({
 };
 
 /**
- * Refusals that won't change on a retry. Not 403: hooks.server.ts also answers it when the Access
- * JWT doesn't verify (e.g. the certs fetch failed), and dropping a chore is worse than retrying.
+ * Refusals that won't change on a retry (the access policy's refusal is a 422). Not 403:
+ * hooks.server.ts answers it when the Access JWT doesn't verify (e.g. the certs fetch failed), and
+ * dropping a chore is worse than retrying.
  */
 const REJECTED_STATUSES = new Set([400, 404, 409, 422]);
 

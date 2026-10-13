@@ -25,5 +25,16 @@ export type PersonRef = { id: string; role: UserRole };
 /** A chore type as the picker shows it (spec Q2): icon + short label, full label for `title`. */
 export type ChoreTypeOption = { id: string; shortLabel: string; fullLabel: string; icon: string };
 
+/** The body of POST /api/chores: what the quick log and the edit sheet send. */
+export type NewChore = {
+	id: string;
+	choreTypeId: string;
+	durationMinutes: number;
+	/** ISO UTC. */
+	startedAt: string;
+	note: string | null;
+	performerUserId: string;
+};
+
 /** A chore's note is one line (spec Q3), this long at most. */
 export const MAX_CHORE_NOTE_LENGTH = 200;

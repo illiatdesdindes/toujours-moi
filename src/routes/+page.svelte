@@ -1,14 +1,19 @@
 <!-- Accueil: the quick log (spec Q4). Duration first, a tap on a type logs it through the pending card. -->
 <script lang="ts">
 	import { getChoreOutbox, getShowToast } from '#lib/app-context.js';
-	import { deriveStartedAt, endsInTheFuture, formatDuration } from '#lib/chore-timing.js';
-	import type { NewChore } from '#lib/chore-outbox.js';
+	import {
+		deriveStartedAt,
+		endsInTheFuture,
+		formatDuration,
+		NO_FUTURE_CHORE_MESSAGE
+	} from '#lib/chore-timing.js';
 	import ChoreEditSheet from '#lib/components/ChoreEditSheet.svelte';
 	import ChoreTypePicker from '#lib/components/ChoreTypePicker.svelte';
+	import ChoreWhenAndNoteFields from '#lib/components/ChoreWhenAndNoteFields.svelte';
 	import DurationStepper from '#lib/components/DurationStepper.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import PendingChoreCard from '#lib/components/PendingChoreCard.svelte';
-	import { MAX_CHORE_NOTE_LENGTH, type ChoreTypeOption } from '#lib/domain.js';
+	import type { ChoreTypeOption, NewChore } from '#lib/domain.js';
 	import {
 		formatParisDayAndTime,
 		fromParisDateAndTime,
@@ -25,7 +30,7 @@
 	// svelte-ignore state_referenced_locally
 	let durationMinutes = $state(data.defaultDurationMinutes);
 	/** The collapsed line's overrides; empty date and time = now − duration (spec Q4). */
-	let details = $state({ open: false, date: '', time: '', note: '' });
+	let quickLogOverrides = $state({ open: false, date: '', time: '', note: '' });
 	let now = $state(new Date());
 	let pendingChore = $state<NewChore | null>(null);
 	let choreInEditSheet = $state<NewChore | null>(null);
@@ -35,25 +40,27 @@
 
 	const startedAtFor = (tappedAt: Date) => {
 		const derived = deriveStartedAt(tappedAt, durationMinutes);
-		if (!details.date && !details.time) return derived;
+		if (!quickLogOverrides.date && !quickLogOverrides.time) return derived;
 		const derivedWallTime = toParisDateAndTime(derived);
 		return fromParisDateAndTime(
-			details.date || derivedWallTime.date,
-			details.time || derivedWallTime.time
+			quickLogOverrides.date || derivedWallTime.date,
+			quickLogOverrides.time || derivedWallTime.time
 		);
 	};
-	const detailsSummary = $derived(
-		`${formatParisDayAndTime(startedAtFor(now), now)} · Moi${details.note.trim() ? ' · 📝' : ''}`
+	const quickLogOverridesSummary = $derived(
+		`${formatParisDayAndTime(startedAtFor(now), now)} · Moi${quickLogOverrides.note.trim() ? ' · 📝' : ''}`
 	);
 
 	const commit = (chore: NewChore) => {
 		void choreOutbox.submit(chore);
-		details = { open: false, date: '', time: '', note: '' };
-		const choreType = choreTypeById(chore.choreTypeId);
-		showToast(`✓ ${choreType?.shortLabel} · ${formatDuration(chore.durationMinutes)} enregistré`);
+		quickLogOverrides = { open: false, date: '', time: '', note: '' };
 	};
 	const pendingChoreTimer = createPendingChore<NewChore>({
-		commit,
+		commit: (chore) => {
+			commit(chore);
+			const choreType = choreTypeById(chore.choreTypeId);
+			showToast(`✓ ${choreType?.shortLabel} · ${formatDuration(chore.durationMinutes)} enregistré`);
+		},
 		onChange: (chore) => (pendingChore = chore)
 	});
 
@@ -61,7 +68,7 @@
 		const tappedAt = new Date();
 		const startedAt = startedAtFor(tappedAt);
 		if (endsInTheFuture(startedAt, durationMinutes, tappedAt)) {
-			showToast('Pas de tâche dans le futur : change la date ou le début.');
+			showToast(`${NO_FUTURE_CHORE_MESSAGE} : change la date ou le début.`);
 			return;
 		}
 		pendingChoreTimer.start({
@@ -69,7 +76,7 @@
 			choreTypeId: choreType.id,
 			durationMinutes,
 			startedAt: startedAt.toISOString(),
-			note: details.note.trim() || null,
+			note: quickLogOverrides.note.trim() || null,
 			performerUserId: data.viewer.id
 		});
 	};
@@ -108,40 +115,23 @@
 
 		<details
 			class="mt-4 rounded-field border-2 border-base-content bg-base-200"
-			bind:open={details.open}
+			bind:open={quickLogOverrides.open}
 		>
 			<summary class="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm">
-				<Icon glyph="chevron-right" class={['size-4 transition', details.open && 'rotate-90']} />
-				<span class="first-letter:uppercase">{detailsSummary}</span>
+				<Icon
+					glyph="chevron-right"
+					class={['size-4 transition', quickLogOverrides.open && 'rotate-90']}
+				/>
+				<span class="first-letter:uppercase">{quickLogOverridesSummary}</span>
 			</summary>
-			<div class="grid grid-cols-2 gap-2 border-t-2 border-base-content p-3 text-sm">
-				<label
-					>Date<input
-						type="date"
-						class="input w-full input-sm"
-						bind:value={details.date}
-						max={today}
-					/></label
-				>
-				<label
-					>Début<input
-						type="time"
-						step="900"
-						class="input w-full input-sm"
-						bind:value={details.time}
-					/></label
-				>
-				<label class="col-span-2"
-					>Note<input
-						class="input w-full input-sm"
-						bind:value={details.note}
-						maxlength={MAX_CHORE_NOTE_LENGTH}
-						placeholder="facultatif"
-					/></label
-				>
-				<p class="col-span-2 text-xs opacity-70">
-					Laisse date et début vides pour « maintenant − durée ».
-				</p>
+			<div class="space-y-2 border-t-2 border-base-content p-3">
+				<ChoreWhenAndNoteFields
+					bind:date={quickLogOverrides.date}
+					bind:time={quickLogOverrides.time}
+					bind:note={quickLogOverrides.note}
+					latestDate={today}
+				/>
+				<p class="text-xs opacity-70">Laisse date et début vides pour « maintenant − durée ».</p>
 			</div>
 		</details>
 	</section>
@@ -168,6 +158,7 @@
 			onSave={(chore) => {
 				choreInEditSheet = null;
 				commit(chore);
+				showToast('✓ Enregistré'); // the prototype's saveSheet
 			}}
 			onClose={() => (choreInEditSheet = null)}
 		/>
