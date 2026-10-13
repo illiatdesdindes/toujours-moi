@@ -15,13 +15,14 @@ The code side is done: `.github/workflows/ci.yml` deploys every push to `main` (
    - `CLOUDFLARE_ACCOUNT_ID`: from the Workers dashboard sidebar.
    - `CLOUDFLARE_API_TOKEN`: My Profile → API Tokens → "Edit Cloudflare Workers" template, plus Account → D1 → Edit; zone `samyv.com`. Keep Zone → Workers Routes in it: the deploy needs it every time with a custom domain (workers-sdk#15863).
 4. **Arm the deploy**: `gh variable set D1_PRODUCTION_ID --body <uuid>` (the same ID as in the config). The next push to `main` deploys; the first one creates the `tjm` DNS record (delete any existing one first).
-5. **VAPID secrets**: `cf deploy` deletes every secret `cloudflare.config.ts` doesn't declare, and the Worker must exist first. So the first deploy fails on the missing secrets ("required secrets have not been set"): set them, then re-run it (`gh run rerun <run-id> --failed`). One pair, both base64url:
+5. **VAPID secrets** (one pair, both base64url): the first CI deploy fails with "required secrets have not been set" and, since the Worker doesn't exist yet, secrets can't be set on their own. Make the first deploy from a local `main` with the secrets in a file, then re-run the CI job (`gh run rerun <run-id> --failed`) to check CI keeps them (done 2026-10-13):
    ```sh
-   read -r PUB PRIV < <(node --input-type=module -e "const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign']);console.log(Buffer.from(await crypto.subtle.exportKey('raw',k.publicKey)).toString('base64url'),(await crypto.subtle.exportKey('jwk',k.privateKey)).d)")
-   npx cf workers secrets update VAPID_PUBLIC_KEY --worker tjm --type secret_text --text "$PUB" --mode production
-   npx cf workers secrets update VAPID_PRIVATE_KEY --worker tjm --type secret_text --text "$PRIV" --mode production
+   (umask 077; node --input-type=module -e "const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign']);console.log('VAPID_PUBLIC_KEY='+Buffer.from(await crypto.subtle.exportKey('raw',k.publicKey)).toString('base64url')+'\nVAPID_PRIVATE_KEY='+(await crypto.subtle.exportKey('jwk',k.privateKey)).d)" > /tmp/tjm-vapid.env)
+   npm run build && npx wrangler build --x-new-config --env production --experimental-cf-build-output && npx cf deploy --prebuilt --mode production --secrets-file /tmp/tjm-vapid.env
+   rm /tmp/tjm-vapid.env
    ```
-   A new pair breaks every Push Subscription: each member turns Notifications back on in Réglages.
+   Later, to replace a secret on the existing Worker: `npx cf workers secrets update VAPID_PUBLIC_KEY --worker tjm --type secret_text --text "…" --mode production`. `cf deploy` deletes every secret `cloudflare.config.ts` doesn't declare, so a new secret goes in only once the change declaring it is on `main`. A new pair breaks every Push Subscription: each member turns Notifications back on in Réglages.
+   - Right after the first deploy, the public files may answer 500 for a minute.
 6. **Check**:
    - The admin opens `https://tjm.samyv.com` in a private window → Access login → the app, as admin. `curl -I https://tjm.samyv.com` → Access redirect, never the app; `curl -I https://tjm.samyv.com/manifest.webmanifest` → 200.
    - Android (Chrome): the install screen, install, Réglages → Notifications on; a chore logged from another account shows a Notification.
