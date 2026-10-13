@@ -10,7 +10,7 @@
 		"build": "vite build",
 		"preview": "npm run build && wrangler dev --x-new-config --env development --port 4173",
 		"prepare": "svelte-kit sync || echo ''",
-		"check": "cf workers types --mode development && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check": "cf workers types --mode development && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc -p src/service-worker --noEmit",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:unit": "vitest --project unit",
 		"test": "npm run build && vitest run",

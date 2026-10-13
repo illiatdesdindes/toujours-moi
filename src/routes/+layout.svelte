@@ -3,6 +3,7 @@
 	import favicon from '#lib/assets/favicon.svg';
 	import logo from '#lib/assets/logo.svg';
 	import Icon, { type IconGlyph } from '#lib/components/Icon.svelte';
+	import InstallScreen from '#lib/components/InstallScreen.svelte';
 	import ProfileSwitcher from '#lib/components/ProfileSwitcher.svelte';
 	import { PERSONAL_COLOURS } from '#lib/domain.js';
 	import { profilePageHref } from '#lib/profile-page-href.js';
@@ -96,8 +97,11 @@
 	<title>{pageTitle} · TJM</title>
 </svelte:head>
 
+<InstallScreen />
+
+<!-- Hidden behind the install screen on a phone tab that isn't installed (spec Q12). -->
 <div
-	class="flex min-h-dvh bg-base-100 text-base-content"
+	class="flex min-h-dvh bg-base-100 text-base-content install-gate:hidden"
 	style:--color-primary={primaryColour?.background}
 	style:--color-primary-content={primaryColour?.content}
 >

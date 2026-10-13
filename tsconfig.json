@@ -14,5 +14,7 @@
 		"noFallthroughCasesInSwitch": true,
 		"types": ["./.cloudflare/types/index.d.ts", "@cloudflare/vitest-plugin/types", "$app/types"]
 	},
-	"include": ["src", "test", "*.ts"]
+	"include": ["src", "test", "*.ts"],
+	// Typed by its own tsconfig (service worker globals, not the DOM's).
+	"exclude": ["src/service-worker"]
 }

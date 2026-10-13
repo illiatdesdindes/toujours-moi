@@ -72,3 +72,13 @@ brackets when there is one.
   `saveWithVersion()`; the row stays, and leaves Historique and the reports. No undelete in v1.
 - **Update count**: a row's `update_count`, its number of versions after the first; shown on
   Historique rows as "✎ n" to the admin only (`canSeeChoreUpdateCount`).
+
+## App
+
+- **Install screen** [Installe TJM]: the blocking screen a phone tab that isn't installed gets
+  instead of the app (spec Q12; `InstallScreen.svelte`). Who sees it is the `install-gate` CSS
+  variant (`layout.css`): coarse pointer, narrower than `md`, not `display-mode: standalone`.
+  Desktop is exempt. Its "Installer TJM" button shows Chrome's **install prompt**
+  (`beforeinstallprompt`, `install-prompt.ts`) when Chrome offers one.
+- **App shell**: the built JS/CSS and `static/`, cached by the service worker per deploy
+  (`src/service-worker/index.ts`), with the last copy of each page for offline.

@@ -43,6 +43,10 @@
 	--font-sans: 'Space Grotesk', 'Noto Color Emoji', system-ui, sans-serif;
 }
 
+/* Spec Q12: a phone tab that isn't installed gets the install screen, nothing else. Mobile = coarse
+   pointer + narrower than `md` (where the dock gives way to the sidebar); desktop is exempt. */
+@custom-variant install-gate (@media (pointer: coarse) and (width < 48rem) and (not (display-mode: standalone)));
+
 /* Pop cards and tiles (prototype 02's .pop-edge). */
 @utility pop-edge {
 	border: 2px solid var(--color-base-content);
