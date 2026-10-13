@@ -5,11 +5,10 @@
 	import { onMount } from 'svelte';
 
 	let canPrompt = $state(false);
-	let lastOutcome = $state<InstallPromptOutcome | null>(null);
 	let promptInstall: () => Promise<InstallPromptOutcome> = async () => 'unavailable';
 
 	onMount(() => {
-		const installPrompt = listenForInstallPrompt(window, (prompt) => (canPrompt = prompt));
+		const installPrompt = listenForInstallPrompt(window, (canPromptNow) => (canPrompt = canPromptNow));
 		promptInstall = installPrompt.promptInstall;
 		return installPrompt.stopListening;
 	});
@@ -24,16 +23,12 @@
 		TJM s'utilise comme une application. Installe-la sur ton téléphone pour noter tes tâches en deux
 		taps et recevoir les notifications.
 	</p>
-	{#if lastOutcome === 'accepted'}
-		<p role="status" class="font-semibold">
-			C'est installé ! Ouvre TJM depuis ton écran d'accueil.
-		</p>
-	{:else if canPrompt}
+	{#if canPrompt}
 		<!-- h-auto: daisyUI's fixed btn height clips a wrapped label on a narrow phone. -->
 		<button
 			type="button"
 			class="btn h-auto w-full py-3 btn-lg btn-primary"
-			onclick={async () => (lastOutcome = await promptInstall())}
+			onclick={() => promptInstall()}
 		>
 			Installer TJM
 		</button>

@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { listenForInstallPrompt, type DeferredInstallPrompt } from './install-prompt';
+import {
+	listenForInstallPrompt,
+	type DeferredInstallPrompt,
+	type InstallPromptChoice
+} from './install-prompt';
 
 /** A `beforeinstallprompt` event as Chrome fires it, with the outcome the user will pick. */
-const installPromptEvent = (outcome: 'accepted' | 'dismissed') => {
+const installPromptEvent = (outcome: InstallPromptChoice) => {
 	const event = new Event('beforeinstallprompt', { cancelable: true }) as Event &
 		DeferredInstallPrompt;
 	event.prompt = vi.fn(async () => {});

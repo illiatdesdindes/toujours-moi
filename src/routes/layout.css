@@ -44,8 +44,9 @@
 }
 
 /* Spec Q12: a phone tab that isn't installed gets the install screen, nothing else. Mobile = coarse
-   pointer + narrower than `md` (where the dock gives way to the sidebar); desktop is exempt. */
-@custom-variant install-gate (@media (pointer: coarse) and (width < 48rem) and (not (display-mode: standalone)));
+   pointer + a short side under `md` (48rem), so a phone turned to landscape stays gated; a tablet
+   (both sides 48rem and up) and desktop are exempt. */
+@custom-variant install-gate (@media (pointer: coarse) and ((width < 48rem) or (height < 48rem)) and (not (display-mode: standalone)));
 
 /* Pop cards and tiles (prototype 02's .pop-edge). */
 @utility pop-edge {

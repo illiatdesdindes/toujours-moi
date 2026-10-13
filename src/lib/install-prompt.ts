@@ -4,10 +4,13 @@
 /** Chrome's `BeforeInstallPromptEvent` (not in the DOM types: Chromium only). */
 export type DeferredInstallPrompt = Event & {
 	prompt(): Promise<void>;
-	userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+	userChoice: Promise<{ outcome: InstallPromptChoice }>;
 };
 
-export type InstallPromptOutcome = 'accepted' | 'dismissed' | 'unavailable';
+/** What the user picked in Chrome's install prompt. */
+export type InstallPromptChoice = 'accepted' | 'dismissed';
+
+export type InstallPromptOutcome = InstallPromptChoice | 'unavailable';
 
 /** Listens on `target` (the window); `onCanPromptChange` says whether the button can prompt. */
 export const listenForInstallPrompt = (
@@ -19,13 +22,13 @@ export const listenForInstallPrompt = (
 		deferredInstallPrompt = prompt;
 		onCanPromptChange(prompt !== null);
 	};
-	const keepPrompt = (event: Event) => {
+	const keepDeferredInstallPrompt = (event: Event) => {
 		event.preventDefault(); // our button instead of Chrome's mini-infobar
 		setDeferredInstallPrompt(event as DeferredInstallPrompt);
 	};
-	const dropPrompt = () => setDeferredInstallPrompt(null);
-	target.addEventListener('beforeinstallprompt', keepPrompt);
-	target.addEventListener('appinstalled', dropPrompt);
+	const dropDeferredInstallPrompt = () => setDeferredInstallPrompt(null);
+	target.addEventListener('beforeinstallprompt', keepDeferredInstallPrompt);
+	target.addEventListener('appinstalled', dropDeferredInstallPrompt);
 
 	return {
 		async promptInstall(): Promise<InstallPromptOutcome> {
@@ -37,8 +40,8 @@ export const listenForInstallPrompt = (
 			return (await prompt.userChoice).outcome;
 		},
 		stopListening() {
-			target.removeEventListener('beforeinstallprompt', keepPrompt);
-			target.removeEventListener('appinstalled', dropPrompt);
+			target.removeEventListener('beforeinstallprompt', keepDeferredInstallPrompt);
+			target.removeEventListener('appinstalled', dropDeferredInstallPrompt);
 		}
 	};
 };
