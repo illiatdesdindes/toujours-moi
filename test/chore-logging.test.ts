@@ -81,7 +81,7 @@ describe('POST /api/chores', () => {
 		const chore = newChore();
 		await logChore(chore);
 		const res = await logChore(
-			{ ...chore, performerUserId: PARENT_ID, durationMinutes: 15 },
+			{ ...chore, performerUserId: PARENT_ID, durationMinutes: 5 },
 			'maman@exemple.fr'
 		);
 		expect(res.status).toBe(409);
@@ -93,7 +93,7 @@ describe('POST /api/chores', () => {
 	it.each([
 		['a future chore', { startedAt: new Date(Date.now() - 10 * 60_000).toISOString() }],
 		['more than 24 h', { durationMinutes: 1455 }],
-		['a duration off the quarter hour', { durationMinutes: 20 }],
+		['a duration off the 5 minutes', { durationMinutes: 22 }],
 		['no duration', { durationMinutes: undefined }],
 		['a v4 id', { id: crypto.randomUUID() }],
 		['an unknown type', { choreTypeId: uuidV7() }],
@@ -151,7 +151,7 @@ describe('POST /api/chores', () => {
 		expect(html).toContain('>1 h 30</output>');
 		// Maman hasn't logged anything: the first default.
 		const mamanHtml = await (await fetchPage('/', await accessHeaders('maman@exemple.fr'))).text();
-		expect(mamanHtml).toContain('>45 min</output>');
+		expect(mamanHtml).toContain('>15 min</output>');
 	});
 });
 

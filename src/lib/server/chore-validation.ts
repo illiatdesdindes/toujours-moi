@@ -20,7 +20,7 @@ export const parseChoreFields = (body: unknown): ChoreFields | string => {
 	if (!isUuidV7(choreTypeId)) return 'Type de tâche inconnu';
 	if (!isUuidV7(performerUserId)) return 'Personne inconnue';
 	if (typeof durationMinutes !== 'number' || !isValidDurationMinutes(durationMinutes))
-		return 'Durée invalide : par quarts d’heure, de 15 min à 24 h';
+		return 'Durée invalide : par 5 minutes, de 5 min à 24 h';
 	if (typeof startedAt !== 'string' || Number.isNaN(Date.parse(startedAt)))
 		return 'Date de début invalide';
 	if (note != null && typeof note !== 'string') return 'Note invalide';

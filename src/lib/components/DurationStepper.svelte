@@ -1,8 +1,9 @@
-<!-- The duration, first on the home (spec Q4): −/+ by 15 min up to 24 h, and the chips on the home. -->
+<!-- The duration, first on the home (spec Q4): −/+ by 5 min under 30 min, by 15 min up to 24 h, and the chips on the home. -->
 <script lang="ts">
 	import {
 		clampDurationMinutes,
 		DURATION_CHIPS_MINUTES,
+		durationStepMinutes,
 		formatDuration,
 		MAX_DURATION_MINUTES,
 		MIN_DURATION_MINUTES
@@ -18,7 +19,8 @@
 		compact?: boolean;
 	} = $props();
 
-	const STEP_MINUTES = 15;
+	const downStepMinutes = $derived(durationStepMinutes(durationMinutes, -1));
+	const upStepMinutes = $derived(durationStepMinutes(durationMinutes, 1));
 	const step = (minutes: number) =>
 		(durationMinutes = clampDurationMinutes(durationMinutes + minutes));
 </script>
@@ -27,9 +29,9 @@
 	<button
 		type="button"
 		class={['btn btn-circle', !compact && 'btn-lg']}
-		aria-label="Moins 15 minutes"
+		aria-label="Moins {downStepMinutes} minutes"
 		disabled={durationMinutes <= MIN_DURATION_MINUTES}
-		onclick={() => step(-STEP_MINUTES)}><Icon glyph="minus" class="size-6" /></button
+		onclick={() => step(-downStepMinutes)}><Icon glyph="minus" class="size-6" /></button
 	>
 	<output class={['font-bold tabular-nums', compact ? 'text-3xl' : 'text-4xl']} aria-live="polite"
 		>{formatDuration(durationMinutes)}</output
@@ -37,9 +39,9 @@
 	<button
 		type="button"
 		class={['btn btn-circle', !compact && 'btn-lg']}
-		aria-label="Plus 15 minutes"
+		aria-label="Plus {upStepMinutes} minutes"
 		disabled={durationMinutes >= MAX_DURATION_MINUTES}
-		onclick={() => step(STEP_MINUTES)}><Icon glyph="plus" class="size-6" /></button
+		onclick={() => step(upStepMinutes)}><Icon glyph="plus" class="size-6" /></button
 	>
 </div>
 {#if !compact}

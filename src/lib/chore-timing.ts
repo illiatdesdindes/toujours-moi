@@ -1,11 +1,11 @@
 // A chore's duration and start time (spec Q3, Q4).
 
-export const MIN_DURATION_MINUTES = 15;
+export const MIN_DURATION_MINUTES = 5;
 export const MAX_DURATION_MINUTES = 24 * 60;
 /** The home's duration chips (spec Q4, prototype 02). */
-export const DURATION_CHIPS_MINUTES = [15, 30, 45, 60, 90, 120, 180] as const;
+export const DURATION_CHIPS_MINUTES = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180] as const;
 /** The home's duration before the viewer's first chore (prototype 02). */
-export const FIRST_DURATION_MINUTES = 45;
+export const FIRST_DURATION_MINUTES = 15;
 
 const MINUTE_MS = 60_000;
 const QUARTER_MS = 15 * MINUTE_MS;
@@ -25,10 +25,14 @@ export const formatSignedDuration = (minutes: number) =>
 export const clampDurationMinutes = (minutes: number) =>
 	Math.min(MAX_DURATION_MINUTES, Math.max(MIN_DURATION_MINUTES, minutes));
 
-/** Multiple of 15, 15 to 1440: the `chores.duration_minutes` CHECK. */
+/** The stepper's −/+ step: 5 min under 30 min, 15 min from 30 min up. */
+export const durationStepMinutes = (minutes: number, direction: 1 | -1) =>
+	(direction > 0 ? minutes < 30 : minutes <= 30) ? 5 : 15;
+
+/** Multiple of 5, 5 to 1440: the `chores.duration_minutes` CHECK. */
 export const isValidDurationMinutes = (minutes: number) =>
 	Number.isInteger(minutes) &&
-	minutes % 15 === 0 &&
+	minutes % 5 === 0 &&
 	minutes >= MIN_DURATION_MINUTES &&
 	minutes <= MAX_DURATION_MINUTES;
 

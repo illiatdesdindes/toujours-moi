@@ -33,7 +33,7 @@ brackets when there is one.
 
 ## Chores
 
-- **Chore** [tâche]: one thing someone did, for a duration (multiple of 15 min, 15 min to 24 h),
+- **Chore** [tâche]: one thing someone did, for a duration (multiple of 5 min, 5 min to 24 h),
   from a start time (`started_at`, UTC). Never in the future (spec Q3).
 - **Chore type** [type de tâche]: a catalog entry (icon emoji, short and full label). Archived types
   drop out of the picker; past chores keep them (spec Q2). The **chore type catalog** is every
