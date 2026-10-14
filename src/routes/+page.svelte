@@ -88,16 +88,8 @@
 		onChange: (chore) => (pendingChore = chore)
 	});
 
-	/** A second tap on the same tile this soon is a double tap or a bounce, not a second chore. */
-	const DOUBLE_TAP_MS = 600;
-	let lastPick = { choreTypeId: '', at: 0 };
-
 	const logChoreType = (choreType: ChoreTypeOption) => {
 		const tappedAt = new Date();
-		const isDoubleTap =
-			lastPick.choreTypeId === choreType.id && tappedAt.getTime() - lastPick.at < DOUBLE_TAP_MS;
-		lastPick = { choreTypeId: choreType.id, at: tappedAt.getTime() };
-		if (isDoubleTap && pendingChoreTimer.current) return;
 		const startedAt = startedAtFor(tappedAt);
 		if (endsInTheFuture(startedAt, durationMinutes, tappedAt)) {
 			showToast(`${NO_FUTURE_CHORE_MESSAGE} : change la date ou le début.`);
@@ -142,7 +134,11 @@
 			Quoi ? <span class="font-normal">(un clic enregistre)</span>
 		</h2>
 		<div class="mt-2">
-			<ChoreTypePicker choreTypes={data.choreTypes} onPick={logChoreType} />
+			<ChoreTypePicker
+				choreTypes={data.choreTypes}
+				onPick={logChoreType}
+				pendingChoreTypeId={pendingChore?.choreTypeId}
+			/>
 		</div>
 
 		<details
@@ -174,15 +170,14 @@
 
 {#if pendingChore}
 	{@const choreType = choreTypeById(pendingChore.choreTypeId)}
-	{#key pendingChore.id}
-		<PendingChoreCard
-			icon={choreType?.icon ?? ''}
-			summary={choreLabelFor(pendingChore)}
-			dayAndTime={formatParisDayAndTime(new Date(pendingChore.startedAt), now)}
-			onEdit={() => (choreInEditSheet = pendingChoreTimer.takeForEdit())}
-			onCancel={pendingChoreTimer.cancel}
-		/>
-	{/key}
+	<PendingChoreCard
+		pendingChoreId={pendingChore.id}
+		icon={choreType?.icon ?? ''}
+		summary={choreLabelFor(pendingChore)}
+		dayAndTime={formatParisDayAndTime(new Date(pendingChore.startedAt), now)}
+		onEdit={() => (choreInEditSheet = pendingChoreTimer.takeForEdit())}
+		onCancel={pendingChoreTimer.cancel}
+	/>
 {/if}
 
 {#if choreInEditSheet}

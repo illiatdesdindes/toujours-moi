@@ -358,7 +358,8 @@ describe('Historique', () => {
 		await seedChore(ADMIN_ID, ADMIN_ID, 0.75);
 		const res = await fetchPage('/historique', await accessHeaders('papa@exemple.fr'));
 		const html = await res.text();
-		expect(html).toContain("aujourd'hui");
+		// 45 min ago: still yesterday's group in the first 45 minutes after midnight.
+		expect(html).toMatch(/aujourd'hui|hier/);
 		expect(html).toContain('45 min');
 		expect(html).toContain('🍽️');
 	});

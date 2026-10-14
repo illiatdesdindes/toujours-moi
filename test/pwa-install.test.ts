@@ -26,6 +26,8 @@ describe('PWA install', () => {
 			// Shown and hidden by the one `install-gate` media query (layout.css).
 			expect(html).toMatch(/class="hidden[^"]*install-gate:flex/);
 			expect(html).toMatch(/class="[^"]*install-gate:hidden/);
+			// DEV_SKIP_INSTALL_SCREEN is local dev only.
+			expect(html).not.toContain('data-skip-install-gate');
 		}
 	);
 });
