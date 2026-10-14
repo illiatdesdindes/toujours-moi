@@ -15,7 +15,8 @@
 	import { formatParisDayAndTime } from '#lib/paris-time.js';
 	import { onMount } from 'svelte';
 	import { prefersReducedMotion } from 'svelte/motion';
-	import { fade, fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
+	import { fade } from 'svelte/transition';
 
 	let { data, children } = $props();
 
@@ -29,6 +30,22 @@
 	/** Measured per toast: the ones behind take the front one's height, so their top edges peek out. */
 	let toastHeights = $state<Record<number, number>>({});
 	const frontToastHeight = $derived(toastHeights[toasts.at(-1)?.toastNumber ?? -1]);
+	/** A new toast rises from behind the pending card (its offset is the card's height); with no card, from just below. */
+	const riseFromBehindPendingCard = (toastElement: HTMLElement) => {
+		const cardOffset = parseFloat(
+			getComputedStyle(toastElement.ownerDocument.documentElement).getPropertyValue(
+				'--pending-chore-card-offset'
+			)
+		);
+		return {
+			duration: prefersReducedMotion.current ? 0 : 250,
+			easing: cubicOut,
+			css: (_: number, remaining: number) =>
+				cardOffset
+					? `transform: translateY(${remaining * cardOffset}px)`
+					: `transform: translateY(${remaining * 12}px); opacity: ${1 - remaining}`
+		};
+	};
 	const showToast = (message: string) => {
 		const toastNumber = ++lastToastNumber;
 		toasts = [...toasts, { message, toastNumber }].slice(-MAX_STACKED_TOASTS);
@@ -174,12 +191,12 @@
 		</main>
 	</div>
 
-	<!-- Always in the page, so screen readers hear each new message. Sits above the pending card when one shows (it sets the offset), never over its buttons, and glides down into the card's place when it goes. -->
+	<!-- Always in the page, so screen readers hear each new message. Sits above the pending card when one shows (it sets the offset), never over its buttons: it rises from behind the card (stacked under it), and glides down into the card's place when it goes. -->
 	<div role="status">
 		{#each toasts as toast, index (toast.toastNumber)}
 			{@const depth = toasts.length - 1 - index}
 			<p
-				class="fixed inset-x-3 bottom-[calc(5rem+var(--pending-chore-card-offset,0px))] z-30 origin-top overflow-hidden rounded-box bg-neutral p-3 text-sm text-neutral-content pop-edge motion-safe:transition-[bottom,transform,opacity] motion-safe:duration-200 md:right-6 md:bottom-[calc(1.5rem+var(--pending-chore-card-offset,0px))] md:left-auto md:w-96"
+				class="fixed inset-x-3 bottom-[calc(5rem+var(--pending-chore-card-offset,0px))] z-10 origin-top overflow-hidden rounded-box bg-neutral p-3 text-sm text-neutral-content pop-edge motion-safe:transition-[bottom,transform,opacity] motion-safe:duration-200 md:right-6 md:bottom-[calc(1.5rem+var(--pending-chore-card-offset,0px))] md:left-auto md:w-96"
 				style:transform={depth
 					? `translateY(${-10 * depth}px) scale(${1 - 0.06 * depth})`
 					: undefined}
@@ -187,7 +204,7 @@
 				style:height={depth && frontToastHeight ? `${frontToastHeight}px` : undefined}
 				bind:clientHeight={toastHeights[toast.toastNumber]}
 				aria-hidden={depth ? true : undefined}
-				in:fly={{ y: 12, duration: prefersReducedMotion.current ? 0 : 200 }}
+				in:riseFromBehindPendingCard
 				out:fade={{ duration: prefersReducedMotion.current ? 0 : 150 }}
 			>
 				{toast.message}
