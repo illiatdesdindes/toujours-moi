@@ -4,6 +4,9 @@
 # lea@ or noe@ (children), all @exemple.fr. Restart the dev server after changing it.
 DEV_VIEWER_EMAIL=papa@exemple.fr
 
+# `true` turns the phone install screen off, to try the mobile layout in a browser's phone emulation.
+DEV_SKIP_INSTALL_SCREEN=false
+
 # Web Push VAPID key pair (base64url), a local one, never production's. This prints one:
 # node --input-type=module -e "const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign']);console.log('VAPID_PUBLIC_KEY='+Buffer.from(await crypto.subtle.exportKey('raw',k.publicKey)).toString('base64url')+'\nVAPID_PRIVATE_KEY='+(await crypto.subtle.exportKey('jwk',k.privateKey)).d)"
 VAPID_PUBLIC_KEY=XXXXX
