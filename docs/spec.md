@@ -52,7 +52,7 @@ Family chore tracker. Living document written during the grilling session: **Dec
 
 Chores performed by one person and logged by another are called "logged for" below.
 
-- `chore_type_id` (required), `duration_minutes` (required, multiple of 15, 15 to 1440 = 24 h), `started_at` (UTC instant), `performer_user_id` (who did it), `author_user_id` (who logged it, set by the server, never shown), `note` (optional, one line).
+- `chore_type_id` (required), `duration_minutes` (required, multiple of 5, 5 to 1440 = 24 h), `started_at` (UTC instant), `performer_user_id` (who did it), `author_user_id` (who logged it, set by the server, never shown), `note` (optional, one line).
 - Days, weeks, months and years are computed in **Europe/Paris**.
 - No future chores: `started_at + duration` can't be after now.
 - Children always log for themselves. A parent picks the performer from themselves + the children, the admin from everyone (default: themselves, or the person whose view they've switched to).
@@ -60,8 +60,8 @@ Chores performed by one person and logged by another are called "logged for" bel
 ### Home: quick log (Q4, Q5)
 
 - **Rule: logging a chore must be as frictionless as possible.** Duration is the hardest field to remember, so it comes first. Every other field is derived and can be edited later.
-- Layout, top to bottom: **duration** (big −/+ stepper by 15 min, chips 15 / 30 / 45 min / 1 h / 1 h 30 / 2 h / 3 h, up to 24 h) → **type grid** → a collapsed line "Aujourd'hui, 14:15 · Moi" that opens date / time / performer / note.
-- Duration pre-fills with the user's last-used duration (overall, not per type).
+- Layout, top to bottom: **duration** (big −/+ stepper by 5 min under 30 min then by 15 min, chips 5 / 10 / 15 / 20 / 30 / 45 min / 1 h / 1 h 30 / 2 h / 3 h, up to 24 h) → **type grid** → a collapsed line "Aujourd'hui, 14:15 · Moi" that opens date / time / performer / note.
+- Duration pre-fills with the user's last-used duration (overall, not per type), 15 min before their first chore.
 - Start time = moment of the tap − duration, rounded down to the quarter hour (rounding up would make the chore end after the tap, which Q3 refuses). The user can edit date and time.
 - **Tapping a type saves, through a client-side pending state**: a pending card ("🍽️ Vaisselle · 45 min · aujourd'hui 14:15") with a 5 s progress bar, **Modifier** and **Annuler**.
   - Countdown ends → sent to the server: the row is created and notifications go out.
@@ -207,7 +207,7 @@ All ids `TEXT` UUID v7; timestamps ISO UTC `TEXT`. Versioned tables (Q7) also ha
 
 - `users`: `id`, `email` (UNIQUE, lowercase), `name`, `role` CHECK in (`admin`,`parent`,`child`), `colour_key`, `last_duration_minutes` (home default), + versioned columns. Deactivated = `deleted_at` set.
 - `chore_types`: `id`, `type_key` (UNIQUE, English slug), `short_label`, `full_label`, `icon` (emoji), `sort_order`, `archived_at`, + versioned columns.
-- `chores`: `id` (client-generated), `chore_type_id`, `duration_minutes` CHECK (multiple of 15, 15–1440), `started_at`, `performer_user_id`, `author_user_id`, `note`, + versioned columns. Index `(performer_user_id, started_at)` and `(started_at)`.
+- `chores`: `id` (client-generated), `chore_type_id`, `duration_minutes` CHECK (multiple of 5, 5–1440), `started_at`, `performer_user_id`, `author_user_id`, `note`, + versioned columns. Index `(performer_user_id, started_at)` and `(started_at)`.
 - `record_versions`: see Q7 (its `id` is a UUID too, `record_id` TEXT).
 - `push_subscriptions`: see point 3.
 

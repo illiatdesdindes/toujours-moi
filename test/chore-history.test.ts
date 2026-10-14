@@ -184,7 +184,7 @@ describe('Historique', () => {
 	it('writes one more version per save', async () => {
 		const choreId = await seedChore(ADMIN_ID);
 		await updateChore(ADMIN_ID, await editFields(choreId, { durationMinutes: '30' }));
-		await updateChore(ADMIN_ID, await editFields(choreId, { durationMinutes: '15' }));
+		await updateChore(ADMIN_ID, await editFields(choreId, { durationMinutes: '10' }));
 		expect((await versionsOf(choreId)).map((version) => version.version_number)).toEqual([0, 1, 2]);
 	});
 
@@ -197,7 +197,7 @@ describe('Historique', () => {
 		expect(future.status).toBe(400);
 		expect(future.data).toContain('Pas de tâche dans le futur');
 		expect(
-			(await updateChore(ADMIN_ID, await editFields(choreId, { durationMinutes: '20' }))).status
+			(await updateChore(ADMIN_ID, await editFields(choreId, { durationMinutes: '22' }))).status
 		).toBe(400);
 		expect(await versionsOf(choreId)).toHaveLength(1);
 	});

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	clampDurationMinutes,
 	deriveStartedAt,
+	durationStepMinutes,
 	endsInTheFuture,
 	formatDuration,
 	formatSignedDuration,
@@ -10,6 +11,7 @@ import {
 
 describe('formatDuration', () => {
 	it.each([
+		[5, '5 min'],
 		[15, '15 min'],
 		[45, '45 min'],
 		[60, '1 h'],
@@ -28,23 +30,39 @@ describe('formatSignedDuration', () => {
 });
 
 describe('clampDurationMinutes', () => {
-	it('keeps the stepper between 15 min and 24 h', () => {
-		expect(clampDurationMinutes(0)).toBe(15);
+	it('keeps the stepper between 5 min and 24 h', () => {
+		expect(clampDurationMinutes(0)).toBe(5);
 		expect(clampDurationMinutes(30)).toBe(30);
 		expect(clampDurationMinutes(1455)).toBe(1440);
 	});
 });
 
 describe('isValidDurationMinutes', () => {
-	it('accepts multiples of 15 from 15 to 1440 only', () => {
-		expect([15, 45, 1440].map(isValidDurationMinutes)).toEqual([true, true, true]);
-		expect([0, 10, 1455, 22.5, Number.NaN].map(isValidDurationMinutes)).toEqual([
+	it('accepts multiples of 5 from 5 to 1440 only', () => {
+		expect([5, 10, 20, 45, 1440].map(isValidDurationMinutes)).toEqual([
+			true,
+			true,
+			true,
+			true,
+			true
+		]);
+		expect([0, 22, 1445, 22.5, Number.NaN, 1455].map(isValidDurationMinutes)).toEqual([
+			false,
 			false,
 			false,
 			false,
 			false,
 			false
 		]);
+	});
+});
+
+describe('durationStepMinutes', () => {
+	it('steps by 5 min under 30 min, by 15 from there', () => {
+		expect(durationStepMinutes(25, 1)).toBe(5);
+		expect(durationStepMinutes(30, 1)).toBe(15);
+		expect(durationStepMinutes(30, -1)).toBe(5);
+		expect(durationStepMinutes(45, -1)).toBe(15);
 	});
 });
 
