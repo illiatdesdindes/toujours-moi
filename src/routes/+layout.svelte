@@ -14,15 +14,28 @@
 	import { formatDuration } from '#lib/chore-timing.js';
 	import { formatParisDayAndTime } from '#lib/paris-time.js';
 	import { onMount } from 'svelte';
+	import { prefersReducedMotion } from 'svelte/motion';
+	import { fade, fly } from 'svelte/transition';
 
 	let { data, children } = $props();
 
-	let toastMessage = $state<string | null>(null);
-	let toastTimer: ReturnType<typeof setTimeout> | undefined;
+	// A stack in depth: each new toast pushes the older ones back (smaller, dimmer, peeking out above),
+	// so a run of quick logs reads as a pile of confirmations. Each lasts its own 2.5 s.
+	const TOAST_DURATION_MS = 2500;
+	const MAX_STACKED_TOASTS = 3;
+	/** `toastNumber` keys each toast, so the same message twice in a row is two toasts. */
+	let toasts = $state<{ message: string; toastNumber: number }[]>([]);
+	let lastToastNumber = 0;
+	/** Measured per toast: the ones behind take the front one's height, so their top edges peek out. */
+	let toastHeights = $state<Record<number, number>>({});
+	const frontToastHeight = $derived(toastHeights[toasts.at(-1)?.toastNumber ?? -1]);
 	const showToast = (message: string) => {
-		clearTimeout(toastTimer);
-		toastMessage = message;
-		toastTimer = setTimeout(() => (toastMessage = null), 2500);
+		const toastNumber = ++lastToastNumber;
+		toasts = [...toasts, { message, toastNumber }].slice(-MAX_STACKED_TOASTS);
+		setTimeout(() => {
+			toasts = toasts.filter((toast) => toast.toastNumber !== toastNumber);
+			delete toastHeights[toastNumber];
+		}, TOAST_DURATION_MS);
 	};
 	setShowToast(showToast);
 
@@ -161,15 +174,25 @@
 		</main>
 	</div>
 
-	<!-- Always in the page, so screen readers hear each new message. Sits above the pending card when one shows (it sets the offset), never over its buttons. -->
+	<!-- Always in the page, so screen readers hear each new message. Sits above the pending card when one shows (it sets the offset), never over its buttons, and glides down into the card's place when it goes. -->
 	<div role="status">
-		{#if toastMessage}
+		{#each toasts as toast, index (toast.toastNumber)}
+			{@const depth = toasts.length - 1 - index}
 			<p
-				class="fixed inset-x-3 bottom-[calc(5rem+var(--pending-chore-card-offset,0px))] z-30 rounded-box bg-neutral p-3 text-sm text-neutral-content pop-edge md:right-6 md:bottom-[calc(1.5rem+var(--pending-chore-card-offset,0px))] md:left-auto md:w-96"
+				class="fixed inset-x-3 bottom-[calc(5rem+var(--pending-chore-card-offset,0px))] z-30 origin-top overflow-hidden rounded-box bg-neutral p-3 text-sm text-neutral-content pop-edge motion-safe:transition-[bottom,transform,opacity] motion-safe:duration-200 md:right-6 md:bottom-[calc(1.5rem+var(--pending-chore-card-offset,0px))] md:left-auto md:w-96"
+				style:transform={depth
+					? `translateY(${-10 * depth}px) scale(${1 - 0.06 * depth})`
+					: undefined}
+				style:opacity={depth ? 1 - 0.3 * depth : undefined}
+				style:height={depth && frontToastHeight ? `${frontToastHeight}px` : undefined}
+				bind:clientHeight={toastHeights[toast.toastNumber]}
+				aria-hidden={depth ? true : undefined}
+				in:fly={{ y: 12, duration: prefersReducedMotion.current ? 0 : 200 }}
+				out:fade={{ duration: prefersReducedMotion.current ? 0 : 150 }}
 			>
-				{toastMessage}
+				{toast.message}
 			</p>
-		{/if}
+		{/each}
 	</div>
 
 	<!-- The active tab is a primary pill like the sidebar's: text-primary on base-200 fails contrast for most personal colours. -->

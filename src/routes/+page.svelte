@@ -171,15 +171,14 @@
 
 {#if pendingChore}
 	{@const choreType = choreTypeById(pendingChore.choreTypeId)}
-	{#key pendingChore.id}
-		<PendingChoreCard
-			icon={choreType?.icon ?? ''}
-			summary={choreLabelFor(pendingChore)}
-			dayAndTime={formatParisDayAndTime(new Date(pendingChore.startedAt), now)}
-			onEdit={() => (choreInEditSheet = pendingChoreTimer.takeForEdit())}
-			onCancel={pendingChoreTimer.cancel}
-		/>
-	{/key}
+	<PendingChoreCard
+		pendingChoreId={pendingChore.id}
+		icon={choreType?.icon ?? ''}
+		summary={choreLabelFor(pendingChore)}
+		dayAndTime={formatParisDayAndTime(new Date(pendingChore.startedAt), now)}
+		onEdit={() => (choreInEditSheet = pendingChoreTimer.takeForEdit())}
+		onCancel={pendingChoreTimer.cancel}
+	/>
 {/if}
 
 {#if choreInEditSheet}
