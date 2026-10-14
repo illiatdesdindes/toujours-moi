@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPendingChore, PENDING_DELAY_MS } from './pending-chore';
 
-const dishes = { id: 'chore-1', label: 'Vaisselle' };
-const laundry = { id: 'chore-2', label: 'Lessive' };
+const dishes = { id: 'chore-1', choreTypeId: 'dishes' };
+const laundry = { id: 'chore-2', choreTypeId: 'laundry' };
+const dishesAgain = { id: 'chore-3', choreTypeId: 'dishes' };
 
 describe('pending chore', () => {
 	let committed: (typeof dishes)[];
@@ -68,6 +69,18 @@ describe('pending chore', () => {
 		expect(committed).toEqual([dishes]);
 		vi.advanceTimersByTime(1);
 		expect(committed).toEqual([dishes, laundry]);
+	});
+
+	it('ignores the same chore type while it is pending, however late the tap', () => {
+		pendingChore.start(dishes);
+		vi.advanceTimersByTime(PENDING_DELAY_MS - 1);
+		pendingChore.start(dishesAgain);
+		expect(committed).toEqual([]);
+		expect(pendingChore.current).toBe(dishes);
+		vi.advanceTimersByTime(1);
+		expect(committed).toEqual([dishes]);
+		pendingChore.start(dishesAgain);
+		expect(pendingChore.current).toBe(dishesAgain);
 	});
 
 	it('does nothing on cancel or flush with nothing pending', () => {

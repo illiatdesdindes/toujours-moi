@@ -13,5 +13,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const viewer = await findOrBootstrapViewer(env.DB, email);
 	if (!viewer) error(403, 'Accès refusé');
 	event.locals.viewer = viewer;
-	return resolve(event);
+	const skipInstallScreen = dev && env.DEV_SKIP_INSTALL_SCREEN === 'true';
+	return resolve(event, {
+		transformPageChunk: ({ html }) =>
+			skipInstallScreen ? html.replace('<html ', '<html data-skip-install-gate ') : html
+	});
 };

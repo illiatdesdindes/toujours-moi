@@ -46,7 +46,8 @@ brackets when there is one.
   isn't its author; only then is the author shown, on its Historique row ("par Maman") and in its
   edit sheet ("Notée par Maman") (`loggedForPerformerByName`).
 - **Quick log**: the home's two taps (duration, then type) that log a chore (spec Q4).
-- **Pending chore**: a quick-logged chore during its 5 s countdown, before it's committed; Annuler
+- **Pending chore**: a quick-logged chore during its 5 s countdown, before it's committed; its tile
+  shows the countdown and a tap on it is ignored (no second chore of that type); Annuler
   drops it, Modifier takes it to the edit sheet (`pending-chore.ts`).
 - **Historique** [Historique]: the list of chores performed by the selected profile, newest first,
   by Paris day with its total (spec Q6; `chore-history.ts`, `history-days.ts`). Pages of 50 that

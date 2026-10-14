@@ -45,8 +45,15 @@
 
 /* Spec Q12: a phone tab that isn't installed gets the install screen, nothing else. Mobile = coarse
    pointer + a short side under `md` (48rem), so a phone turned to landscape stays gated; a tablet
-   (both sides 48rem and up) and desktop are exempt. */
-@custom-variant install-gate (@media (pointer: coarse) and ((width < 48rem) or (height < 48rem)) and (not (display-mode: standalone)));
+   (both sides 48rem and up) and desktop are exempt. `data-skip-install-gate` on <html> (local dev,
+   DEV_SKIP_INSTALL_SCREEN in hooks.server.ts) turns it off to try the phone layout in a browser. */
+@custom-variant install-gate {
+	@media (pointer: coarse) and ((width < 48rem) or (height < 48rem)) and (not (display-mode: standalone)) {
+		:where(html:not([data-skip-install-gate])) & {
+			@slot;
+		}
+	}
+}
 
 /* Pop cards and tiles (prototype 02's .pop-edge). */
 @utility pop-edge {

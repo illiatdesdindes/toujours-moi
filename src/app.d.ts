@@ -21,6 +21,8 @@ declare global {
 		interface Env {
 			/** Local dev only (`.dev.vars`): the seeded user to act as, since there's no Access. */
 			DEV_VIEWER_EMAIL?: string;
+			/** Local dev only (`.dev.vars`): `true` turns the phone install screen off (layout.css). */
+			DEV_SKIP_INSTALL_SCREEN?: string;
 		}
 	}
 }
