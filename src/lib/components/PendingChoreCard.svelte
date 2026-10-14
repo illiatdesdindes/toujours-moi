@@ -25,10 +25,16 @@
 
 	let cardHeight = $state(0);
 	// The toast stacks above the card instead of covering Modifier / Annuler (layout's toast reads it).
+	// Freed as soon as the card starts sliding away, so the toasts settle in its place in one move
+	// instead of rising above a card that's already leaving, then dropping.
+	const freeTheToastsPlace = () =>
+		document.documentElement.style.removeProperty('--pending-chore-card-offset');
 	$effect(() => {
-		const root = document.documentElement.style;
-		root.setProperty('--pending-chore-card-offset', `${cardHeight + 8}px`);
-		return () => root.removeProperty('--pending-chore-card-offset');
+		document.documentElement.style.setProperty(
+			'--pending-chore-card-offset',
+			`${cardHeight + 8}px`
+		);
+		return freeTheToastsPlace;
 	});
 
 	// A keyboard pick moves focus to Modifier, or Tab couldn't reach the card within 5 s (WCAG 2.2.1).
@@ -82,6 +88,7 @@
 	role="region"
 	aria-label="Tâche en attente"
 	transition:slideUpFromBelowTheScreen
+	onoutrostart={freeTheToastsPlace}
 >
 	{#key pendingChoreId}
 		<div class="flex items-center gap-3 p-3">
