@@ -52,7 +52,7 @@ Family chore tracker. Living document written during the grilling session: **Dec
 
 Chores performed by one person and logged by another are called "logged for" below.
 
-- `chore_type_id` (required), `duration_minutes` (required, multiple of 5, 5 to 1440 = 24 h), `started_at` (UTC instant), `performer_user_id` (who did it), `author_user_id` (who logged it, set by the server, never shown), `note` (optional, one line).
+- `chore_type_id` (required), `duration_minutes` (required, multiple of 5, 5 to 1440 = 24 h), `started_at` (UTC instant), `performer_user_id` (who did it), `author_user_id` (who logged it, set by the server; shown only on a chore logged for someone, see Q6), `note` (optional, one line).
 - Days, weeks, months and years are computed in **Europe/Paris**.
 - No future chores: `started_at + duration` can't be after now.
 - Children always log for themselves. A parent picks the performer from themselves + the children, the admin from everyone (default: themselves, or the person whose view they've switched to).
@@ -77,7 +77,7 @@ Chores performed by one person and logged by another are called "logged for" bel
 ### Chores list, "Historique" (Q6)
 
 - Shows the chores **performed by** the profile in view (yourself by default; the switcher changes it). A child sees only their own.
-- Newest first, **grouped by day** with a daily total in the header ("Lundi 12 oct. · 2 h 15"). Row: icon, short label, duration, start time, note. Infinite scroll, 50 per page.
+- Newest first, **grouped by day** with a daily total in the header ("Lundi 12 oct. · 2 h 15"). Row: icon, short label, duration, start time, note; a chore logged for its performer also says who logged it ("par Maman" on the row, "Notée par Maman" in the edit sheet). Infinite scroll, 50 per page.
 - Tap a row → the same edit sheet as the home's Modifier → "Enregistrer". Each save: `update_count + 1` and a version row.
 - Delete: in the edit sheet, with a confirmation ("Supprimer cette tâche ?"). Soft delete (`deleted_at`, `deleted_by_user_id`); deleted chores leave the list and the reports.
 - **Who may edit or delete a chore:**

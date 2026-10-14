@@ -1,4 +1,4 @@
-<!-- One Historique row (spec Q6, prototype 02): icon, short label (and who, in Famille), note, the admin's "✎ n", 🔒 when read-only, duration and start time. Opens the edit sheet. -->
+<!-- One Historique row (spec Q6, prototype 02): icon, short label (and who, in Famille), who logged it for them, note, the admin's "✎ n", 🔒 when read-only, duration and start time. Opens the edit sheet. -->
 <script lang="ts">
 	import type { HistoryChore } from '#lib/domain.js';
 	import { formatDuration } from '#lib/chore-timing.js';
@@ -11,6 +11,12 @@
 		showsPerformer,
 		onOpen
 	}: { chore: HistoryChore; showsPerformer: boolean; onOpen: () => void } = $props();
+
+	const secondLine = $derived(
+		[chore.loggedForPerformerByName && `par ${chore.loggedForPerformerByName}`, chore.note]
+			.filter(Boolean)
+			.join(' · ')
+	);
 </script>
 
 <button
@@ -30,7 +36,7 @@
 				>
 			{/if}
 		</span>
-		{#if chore.note}<span class="block truncate text-xs opacity-70">{chore.note}</span>{/if}
+		{#if secondLine}<span class="block truncate text-xs opacity-70">{secondLine}</span>{/if}
 	</span>
 	{#if chore.updateCount}
 		<span class="badge h-auto badge-sm badge-secondary" title="Modifiée {chore.updateCount} fois"

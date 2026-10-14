@@ -87,6 +87,8 @@ export type HistoryChore = ChoreFields & {
 	performerName: string;
 	performerColourKey: ColourKey;
 	performerRole: UserRole;
+	/** "Notée par …": the author's name when they logged it for someone else; null when self-logged. */
+	loggedForPerformerByName: string | null;
 	/** The access policy's answer; false = the sheet opens read-only (🔒). */
 	canEdit: boolean;
 	/** The "✎ n" badge, admin only (spec Q6): null for everyone else. */

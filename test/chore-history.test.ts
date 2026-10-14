@@ -91,7 +91,13 @@ const versionsOf = async (choreId: string) =>
 	}));
 
 type HistoryPage = {
-	chores: { id: string; canEdit: boolean; updateCount: number | null; performerName: string }[];
+	chores: {
+		id: string;
+		canEdit: boolean;
+		updateCount: number | null;
+		performerName: string;
+		loggedForPerformerByName: string | null;
+	}[];
 	nextCursor: string | null;
 };
 const fetchHistoryPage = async (viewerId: FamilyMemberId, query = '') => {
@@ -280,7 +286,7 @@ describe('Historique', () => {
 	});
 
 	describe('the list', () => {
-		it("shows the profile's chores, newest first, and drops deleted ones", async () => {
+		it("shows the profile's chores, newest first, with who logged it for them, and drops deleted ones", async () => {
 			const older = await seedChore(CHILD_ID, CHILD_ID, 30);
 			const newer = await seedChore(CHILD_ID, PARENT_ID, 3);
 			const deleted = await seedChore(CHILD_ID, CHILD_ID, 5);
@@ -290,8 +296,18 @@ describe('Historique', () => {
 			const { page } = await fetchHistoryPage(CHILD_ID);
 			expect(page).toEqual({
 				chores: [
-					expect.objectContaining({ id: newer, canEdit: false, updateCount: null }),
-					expect.objectContaining({ id: older, canEdit: true, updateCount: null })
+					expect.objectContaining({
+						id: newer,
+						canEdit: false,
+						updateCount: null,
+						loggedForPerformerByName: 'Maman'
+					}),
+					expect.objectContaining({
+						id: older,
+						canEdit: true,
+						updateCount: null,
+						loggedForPerformerByName: null
+					})
 				],
 				nextCursor: null
 			});
