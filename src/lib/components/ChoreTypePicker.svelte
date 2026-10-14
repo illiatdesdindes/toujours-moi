@@ -1,7 +1,7 @@
 <!-- The chore type tiles (spec Q4): icon + short label, full label in title / aria-label. The one picker, on the home (a tap logs) and in the edit sheet (a tap selects). On the home, the pending chore's tile shows its 5 s countdown and doesn't log again. -->
 <script lang="ts">
 	import type { ChoreTypeOption } from '#lib/domain.js';
-	import { PENDING_DELAY_MS } from '#lib/pending-chore.js';
+	import PendingCountdownBar from './PendingCountdownBar.svelte';
 
 	let {
 		choreTypes,
@@ -58,27 +58,8 @@
 				>{choreType.shortLabel}</span
 			>
 			{#if isPending}
-				<span
-					class="pending-bar absolute inset-x-0 bottom-0 h-1.5 bg-primary-content"
-					style:animation-duration="{PENDING_DELAY_MS}ms"
-					aria-hidden="true"
-				></span>
+				<PendingCountdownBar class="absolute bottom-0 left-0 h-1.5 bg-primary-content" />
 			{/if}
 		</button>
 	{/each}
 </div>
-
-<style>
-	/* The tile's copy of PendingChoreCard's bar, so the countdown shows where the tap was. */
-	.pending-bar {
-		animation: pending-fill linear forwards;
-	}
-	@keyframes pending-fill {
-		from {
-			width: 0;
-		}
-		to {
-			width: 100%;
-		}
-	}
-</style>

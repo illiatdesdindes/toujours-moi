@@ -89,7 +89,6 @@
 	});
 
 	const logChoreType = (choreType: ChoreTypeOption) => {
-		if (pendingChore?.choreTypeId === choreType.id) return; // its tile shows it pending (spec Q4)
 		const tappedAt = new Date();
 		const startedAt = startedAtFor(tappedAt);
 		if (endsInTheFuture(startedAt, durationMinutes, tappedAt)) {
