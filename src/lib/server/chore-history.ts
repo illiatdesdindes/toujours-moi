@@ -28,15 +28,17 @@ type HistoryRow = {
 	performer_name: string;
 	performer_role: UserRole;
 	performer_colour_key: ColourKey;
+	author_name: string;
 };
 
-// Deactivated performers and archived types still show: their chores stay (spec Q2, Q10).
+// Deactivated performers and authors, and archived types still show: their chores stay (spec Q2, Q10).
 const HISTORY_ROWS = `SELECT chores.id, chore_type_id, duration_minutes, started_at, note,
 		performer_user_id, author_user_id, chores.update_count, icon, short_label, full_label,
 		users.name AS performer_name, users.role AS performer_role,
-		users.colour_key AS performer_colour_key
+		users.colour_key AS performer_colour_key, authors.name AS author_name
 	FROM chores
 	JOIN users ON users.id = chores.performer_user_id
+	JOIN users AS authors ON authors.id = chores.author_user_id
 	JOIN chore_types ON chore_types.id = chores.chore_type_id
 	WHERE chores.deleted_at IS NULL AND (?1 IS NULL OR performer_user_id = ?1) AND started_at < ?2`;
 const NEWEST_FIRST = 'ORDER BY started_at DESC, chores.id DESC';
@@ -89,6 +91,7 @@ const toHistoryChore = (viewer: Viewer, row: HistoryRow): HistoryChore => ({
 	performerName: row.performer_name,
 	performerColourKey: row.performer_colour_key,
 	performerRole: row.performer_role,
+	loggedForPerformerByName: row.author_user_id === row.performer_user_id ? null : row.author_name,
 	canEdit: canEditOrDeleteChore(viewer, {
 		performer: { id: row.performer_user_id, role: row.performer_role },
 		authorUserId: row.author_user_id

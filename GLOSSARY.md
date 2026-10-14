@@ -41,9 +41,10 @@ brackets when there is one.
   (`listChoreTypeCatalog()`).
 - **Réglages** [Réglages]: Mon profil (everyone), Enfants (parents), Membres and Types de tâches
   (the admin); every write is a form action of `/reglages` (spec Q10).
-- **Performer** [fait par]: who did the chore (`performer_user_id`). **Author**: who logged it
-  (`author_user_id`), set by the server, never shown. A chore "logged for" someone has a performer
-  who isn't its author.
+- **Performer** [fait par]: who did the chore (`performer_user_id`). **Author** [notée par]: who
+  logged it (`author_user_id`), set by the server. A chore "logged for" someone has a performer who
+  isn't its author; only then is the author shown, on its Historique row ("par Maman") and in its
+  edit sheet ("Notée par Maman") (`loggedForPerformerByName`).
 - **Quick log**: the home's two taps (duration, then type) that log a chore (spec Q4).
 - **Pending chore**: a quick-logged chore during its 5 s countdown, before it's committed; Annuler
   drops it, Modifier takes it to the edit sheet (`pending-chore.ts`).

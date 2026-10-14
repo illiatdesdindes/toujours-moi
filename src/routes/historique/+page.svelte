@@ -137,6 +137,7 @@
 			{chore}
 			title={chore.canEdit ? 'Modifier la tâche' : 'Tâche'}
 			readOnly={!chore.canEdit}
+			loggedForPerformerByName={chore.loggedForPerformerByName}
 			choreTypes={choreTypesFor(chore)}
 			performerOptions={performerOptionsFor(chore)}
 			onSave={async (savedChore: ChoreFields) => {

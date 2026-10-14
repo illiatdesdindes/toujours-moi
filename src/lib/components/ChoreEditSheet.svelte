@@ -14,6 +14,7 @@
 		choreTypes,
 		performerOptions,
 		readOnly = false,
+		loggedForPerformerByName = null,
 		onSave,
 		onDelete,
 		onClose
@@ -26,6 +27,8 @@
 		performerOptions: User[];
 		/** 🔒 (spec Q6): shown, not editable; no Enregistrer nor Supprimer. */
 		readOnly?: boolean;
+		/** A saved chore logged for its performer by someone else: "Notée par …". */
+		loggedForPerformerByName?: string | null;
 		/** A French reason it wasn't saved keeps the sheet open with it; nothing closes it. */
 		onSave: (chore: ChoreFields) => void | Promise<string | null>;
 		/** A saved chore's Supprimer, after "Supprimer cette tâche ?" (spec Q6). Same answer as onSave. */
@@ -105,6 +108,9 @@
 				onclick={() => dialog?.close()}><Icon glyph="x-mark" /></button
 			>
 		</div>
+		{#if loggedForPerformerByName}
+			<p class="mb-3 text-sm opacity-70">Notée par <b>{loggedForPerformerByName}</b></p>
+		{/if}
 		{#if readOnly}
 			<p class="mb-3 alert text-sm">
 				<Icon glyph="lock-closed" class="size-4" />Tu ne peux pas modifier cette tâche.
